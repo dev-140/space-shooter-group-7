@@ -1,5 +1,11 @@
-# Space-Invaders
-A simple Space Invaders game in JavaFX. For more information visit my YouTube channel
+# Space-Shooter
+By group 7
 
-## https://www.youtube.com/watch?v=0szmaHH1hno
+## Authors
+- Cadelina Jaspher
+- Cortina Renz
+- Marzan Rox
+- Santos Leigh
+- Serrato David
+
 ![space](preview.jpg)
