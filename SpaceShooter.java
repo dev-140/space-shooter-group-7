@@ -1,8 +1,5 @@
 package application;
 
-// Icon made by Freepik from www.flaticon.com
-// visit: https://www.youtube.com/user/CbX397/
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
