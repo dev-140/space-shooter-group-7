@@ -1,5 +1,5 @@
 # Space-Shooter
-By group 7
+By group Shell Sort
 
 ## Authors
 - Cadelina Jaspher
