@@ -22,7 +22,7 @@ import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-public class SpaceInvaders extends Application {
+public class SpaceShooter extends Application {
 	
 	//variables
 	private static final Random RAND = new Random();
