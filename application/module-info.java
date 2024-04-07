@@ -5,5 +5,6 @@ module application {
 
     //if necessary, please activate:
     //exports application;
-    //requires transitive javafx.graphics;
+    //requires transitive javafx.graphic;
+    // 1122
 }
