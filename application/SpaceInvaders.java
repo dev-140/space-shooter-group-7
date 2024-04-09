@@ -382,7 +382,7 @@ public class SpaceInvaders extends Application {
     // Method to create triangle formation of enemies
     private void createTriangleFormation() {
     	if(score < 150 || score >= 160) {
-        int currentY = 50; // Starting Y position of the triangle formation
+        int currentY = -180; // Starting Y position of the triangle formation
 
         // Calculate a random starting X position within the visible area of the screen
         int startX = RAND.nextInt(WIDTH - (TRIANGLE_ROWS * (ENEMY_SIZE + ENEMY_GAP)));
