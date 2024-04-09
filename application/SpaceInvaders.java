@@ -381,11 +381,12 @@ public class SpaceInvaders extends Application {
 
     // Method to create triangle formation of enemies
     private void createTriangleFormation() {
+    	if(score < 150 || score >= 155) {
         int currentY = 50; // Starting Y position of the triangle formation
 
         // Calculate a random starting X position within the visible area of the screen
         int startX = RAND.nextInt(WIDTH - (TRIANGLE_ROWS * (ENEMY_SIZE + ENEMY_GAP)));
-
+        
         for (int row = 0; row < TRIANGLE_ROWS; row++) {
             int enemiesInRow = TRIANGLE_ROWS - row; // Number of enemies in the current row
             int rowWidth = enemiesInRow * (ENEMY_SIZE + ENEMY_GAP) - ENEMY_GAP; // Total width of the row
@@ -396,9 +397,11 @@ public class SpaceInvaders extends Application {
                 int posX = startX + i * (ENEMY_SIZE + ENEMY_GAP);
                 bombs.add(new Bomb(posX, currentY, ENEMY_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]));
             }
+        
 
             // Move to the next row
             currentY += ENEMY_SIZE + ENEMY_GAP;
         }
+    	}
     }
 }
