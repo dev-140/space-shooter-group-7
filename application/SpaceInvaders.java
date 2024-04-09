@@ -20,6 +20,8 @@ import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 
 public class SpaceInvaders extends Application {
 
@@ -90,13 +92,19 @@ public class SpaceInvaders extends Application {
     }
 
     // Setup method
+    private static final Duration TRIANGLE_SPAWN_INTERVAL = Duration.seconds(7); // Spawn triangle every 3 seconds
+    private Timeline triangleSpawnTimeline;
     private void setup() {
         univ = new ArrayList<>();
         shots = new ArrayList<>();
         Bombs = new ArrayList<>();
         player = new Rocket(WIDTH / 2, HEIGHT - PLAYER_SIZE, PLAYER_SIZE, PLAYER_IMG);
         score = 0;
-        IntStream.range(0, MAX_BOMBS).mapToObj(i -> this.newBomb()).forEach(Bombs::add);
+//        IntStream.range(0, MAX_BOMBS).mapToObj(i -> this.newBomb()).forEach(Bombs::add); 
+        triangleSpawnTimeline = new Timeline(new KeyFrame(TRIANGLE_SPAWN_INTERVAL, e -> createTriangleFormation()));
+        triangleSpawnTimeline.setCycleCount(Timeline.INDEFINITE);
+        triangleSpawnTimeline.play();
+        createTriangleFormation();
     }
 
     // Run method
@@ -142,11 +150,11 @@ public class SpaceInvaders extends Application {
             }
         }
 
-        for (int i = Bombs.size() - 1; i >= 0; i--) {
-            if (Bombs.get(i).destroyed) {
-                Bombs.set(i, newBomb());
-            }
-        }
+//        for (int i = Bombs.size() - 1; i >= 0; i--) {
+//            if (Bombs.get(i).destroyed) {
+//                Bombs.set(i, newBomb());
+//            }
+//        }
 
         gameOver = player.destroyed;
         if (RAND.nextInt(10) > 2) {
@@ -297,5 +305,33 @@ public class SpaceInvaders extends Application {
     // Distance method
     int distance(int x1, int y1, int x2, int y2) {
         return (int) Math.sqrt(Math.pow((x1 - x2), 2) + Math.pow((y1 - y2), 2));
+    }
+    
+    private static final int TRIANGLE_ROWS = 3;
+    private static final int ENEMY_SIZE = 40;
+    private static final int ENEMY_GAP = 30;
+    private int startX = 100;
+
+    // Method to create triangle formation of enemies
+    private void createTriangleFormation() {
+        int currentY = 50; // Starting Y position of the triangle formation
+
+        // Calculate a random starting X position within the visible area of the screen
+        int startX = RAND.nextInt(WIDTH - (TRIANGLE_ROWS * (ENEMY_SIZE + ENEMY_GAP)));
+
+        for (int row = 0; row < TRIANGLE_ROWS; row++) {
+            int enemiesInRow = TRIANGLE_ROWS - row; // Number of enemies in the current row
+            int rowWidth = enemiesInRow * (ENEMY_SIZE + ENEMY_GAP) - ENEMY_GAP; // Total width of the row
+
+            // Calculate starting X position for the current row to center it
+            startX += (row == 0) ? 0 : (ENEMY_SIZE + ENEMY_GAP) / 2; // Offset for subsequent rows
+            for (int i = 0; i < enemiesInRow; i++) {
+                int posX = startX + i * (ENEMY_SIZE + ENEMY_GAP);
+                Bombs.add(new Bomb(posX, currentY, ENEMY_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]));
+            }
+
+            // Move to the next row
+            currentY += ENEMY_SIZE + ENEMY_GAP;
+        }
     }
 }
