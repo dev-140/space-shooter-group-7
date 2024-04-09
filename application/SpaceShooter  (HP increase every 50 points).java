@@ -15,8 +15,7 @@ import javafx.util.Duration;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 
-
-//FOR OPTION DAW
+//FOR OPTION
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
@@ -25,21 +24,15 @@ import javafx.scene.layout.VBox;
 
 import javafx.application.Platform;
 
-
-
-
-
-
-
-
-
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-public class SpaceShooter extends Application {
+import application.SpaceShooter.Bomb;
+import application.SpaceShooter.Shot;
+
+public class SpaceInvaders extends Application {
 
     private static final Random RAND = new Random();
     private static final int WIDTH = 800;
@@ -59,12 +52,11 @@ public class SpaceShooter extends Application {
     private List<Universe> universes;
     private List<Bomb> bombs;
 
-    
     private boolean showPowerUpSelection = false; // Combined flag
     
     private double mouseX;
     private int score;
-    private int MAX_HITPOINTS = 1; // Adjust this value as needed
+    private int MAX_HITPOINTS = 1; // Changes L
     private boolean gameOver = false;
     private boolean powerUpAvailable = false;
     private boolean powerUpChosen = false;
@@ -73,9 +65,9 @@ public class SpaceShooter extends Application {
     static final Image PLAYER_IMG = new Image("file:images/player.png");
     static final Image EXPLOSION_IMG = new Image("file:images/explosion.png");
     static final Image[] BOMBS_IMG = {
-            new Image("file:images/enemy_1.png"),
-            new Image("file:images/enemy_1.png"),
-            new Image("file:images/enemy_1.png")
+        new Image("file:images/1.png"),
+        new Image("file:images/2.png"),
+        new Image("file:images/3.png")
     };
 
     public void start(Stage stage) throws Exception {
@@ -99,52 +91,55 @@ public class SpaceShooter extends Application {
         stage.show();
     }
 
+    // Setup method
+    private static final Duration TRIANGLE_SPAWN_INTERVAL = Duration.seconds(7); // Spawn triangle every 3 seconds
+    private Timeline triangleSpawnTimeline;
     private void setup() {
         universes = new ArrayList<>();
         shots = new ArrayList<>();
         bombs = new ArrayList<>();
         player = new Rocket(WIDTH / 2, HEIGHT - PLAYER_SIZE, PLAYER_SIZE, PLAYER_IMG);
         score = 0;
-        IntStream.range(0, MAX_BOMBS).mapToObj(i -> newBomb()).forEach(bombs::add);
+//        IntStream.range(0, MAX_BOMBS).mapToObj(i -> this.newBomb()).forEach(Bombs::add); 
+        triangleSpawnTimeline = new Timeline(new KeyFrame(TRIANGLE_SPAWN_INTERVAL, e -> createTriangleFormation()));
+        triangleSpawnTimeline.setCycleCount(Timeline.INDEFINITE);
+        triangleSpawnTimeline.play();
+        createTriangleFormation();
     }
 
     private void run(GraphicsContext gc) {
-    	  gc.setFill(Color.grayRgb(20));
-    	    gc.fillRect(0, 0, WIDTH, HEIGHT);
-    	    gc.setTextAlign(TextAlignment.CENTER);
-    	    gc.setFont(Font.font(20));
-    	    gc.setFill(Color.WHITE);
-    	    gc.fillText("Score: " + score, 60, 20);
+        gc.setFill(Color.grayRgb(20));
+        gc.fillRect(0, 0, WIDTH, HEIGHT);
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.setFont(Font.font(20));
+        gc.setFill(Color.WHITE);
+        gc.fillText("Score: " + score, 60, 20);
 
-    	    // Debug print
-    	    System.out.println("Current score: " + score);
+        // Debug print
+        System.out.println("Current score: " + score);
 
-    	 // Check if power-up is available and handle power-up selection
-    	    if (score > 0 && score % 20 == 0 && !showPowerUpSelection) {
-    	        showPowerUpSelection = true; // Set flag when score reaches a multiple of 20
-    	        // Pause the game
-    	        timeline.stop();
-    	        // Prompt the player to choose a power-up
-    	        showPowerUpOptions();
-                score++;
+        // Check if power-up is available and handle power-up selection
+        if (score > 0 && score % 20 == 0 && !showPowerUpSelection) {
+            showPowerUpSelection = true; // Set flag when score reaches a multiple of 20
+            // Pause the game
+            timeline.stop();
+            // Prompt the player to choose a power-up
+            showPowerUpOptions();
+            score++;
 
-    	    }
-    	    
-    	    if (score < 150 && score % 50 == 0) {
-                // Increase the maximum hitpoints for bombs
-                MAX_HITPOINTS++;
-                score++;
-            }
-    	    
-    	    // Other game logic here...
+        }
 
         // Resume the game if power-up selection is done
         if (powerUpChosen) {
             timeline.play();
         }
         
-        
-
+        // Increase hp of enemy for every 50 points , Max hp is 3 // Changes L
+        if (score < 150 && score % 50 == 0) {
+            // Increase the maximum hitpoints for bombs
+            MAX_HITPOINTS++;
+            score++;
+        }
         
         //DRAW UNIVERSE
         universes.forEach(Universe::draw);
@@ -160,27 +155,8 @@ public class SpaceShooter extends Application {
                 player.explode();
             }
         });
-/*
-        // Update and draw shots
-        for (int i = shots.size() - 1; i >= 0; i--) {
-            Shot shot = shots.get(i);
-            if (shot.posY < 0 || shot.toRemove) {
-                shots.remove(i);
-                continue;
-            }
-            shot.update();
-            shot.draw();
-            for (Bomb bomb : bombs) {
-                if (shot.collide(bomb) && !bomb.exploding) {
-                    score++;
-                    bomb.explode();
-                    shot.toRemove = true;
-                }
-            }
-        }
-*/
-        
-     // Update and draw shots
+
+        // Update and draw shots // Changes L
         for (int i = shots.size() - 1; i >= 0; i--) {
             Shot shot = shots.get(i);
             if (shot.posY < 0 || shot.toRemove) {
@@ -197,16 +173,21 @@ public class SpaceShooter extends Application {
             }
         }
 
-        // Replace destroyed bombs
-        for (int i = bombs.size() - 1; i >= 0; i--) {
-            if (bombs.get(i).destroyed) {
-                bombs.set(i, newBomb());
-            }
-        }
+//        for (int i = Bombs.size() - 1; i >= 0; i--) {
+//            if (Bombs.get(i).destroyed) {
+//                Bombs.set(i, newBomb());
+//            }
+//        }
 
         // Check if the game is over
         gameOver = player.destroyed;
 
+        if (gameOver) {
+            gc.setFont(Font.font(35));
+            gc.setFill(Color.YELLOW);
+            gc.fillText("Game Over\nYour Score is: " + score + "\nClick to play again", WIDTH / 2, HEIGHT / 2.5);
+        }
+        
         // Add new universes
         if (RAND.nextInt(10) > 2) {
             universes.add(new Universe());
@@ -247,6 +228,7 @@ public class SpaceShooter extends Application {
                 if (buttonType == biggerBulletButton) {
                     // Apply the chosen power-up effect for bigger bullet
                     Shot.size = 12;
+                    MAX_HITPOINTS--; // Changes L
                 } else if (buttonType == fasterBulletButton) {
                     // Apply the chosen power-up effect for faster bullet
                     Shot.speed = 45;
@@ -308,25 +290,9 @@ public class SpaceShooter extends Application {
             explosionStep = -1;
         }
     }
-/*
+ // Changes L
     public class Bomb extends Rocket {
-
-        int SPEED = (score / 5) + 2;
-
-        public Bomb(int posX, int posY, int size, Image image) {
-            super(posX, posY, size, image);
-        }
-
-        public void update() {
-            super.update();
-            if (!exploding && !destroyed) posY += SPEED;
-            if (posY > HEIGHT) destroyed = true;
-        }
-    }
-*/
-   //updated v hp
-    public class Bomb extends Rocket {
-        int hitpoints;
+    	int hitpoints;
         int SPEED = (score / 10) + 1;
 
         public Bomb(int posX, int posY, int size, Image image) {
@@ -334,13 +300,11 @@ public class SpaceShooter extends Application {
             hitpoints = MAX_HITPOINTS;
         }
 
-        @Override
         public void update() {
             super.update();
             if (!exploding && !destroyed) posY += SPEED;
             if (posY > HEIGHT) destroyed = true;
         }
-
         public void hit() {
             hitpoints--;
             if (hitpoints <= 0) {
@@ -348,11 +312,11 @@ public class SpaceShooter extends Application {
                 score++;
             }
         }
-        
     }
-  //updated ^
-    
+
+    // Shot class
     public static class Shot {
+
         public boolean toRemove;
         int posX, posY;
         static int size = 6;
@@ -409,5 +373,32 @@ public class SpaceShooter extends Application {
             posY += 20;
         }
     }
-}
+    
+    private static final int TRIANGLE_ROWS = 3;
+    private static final int ENEMY_SIZE = 40;
+    private static final int ENEMY_GAP = 30;
+    private int startX = 100;
 
+    // Method to create triangle formation of enemies
+    private void createTriangleFormation() {
+        int currentY = 50; // Starting Y position of the triangle formation
+
+        // Calculate a random starting X position within the visible area of the screen
+        int startX = RAND.nextInt(WIDTH - (TRIANGLE_ROWS * (ENEMY_SIZE + ENEMY_GAP)));
+
+        for (int row = 0; row < TRIANGLE_ROWS; row++) {
+            int enemiesInRow = TRIANGLE_ROWS - row; // Number of enemies in the current row
+            int rowWidth = enemiesInRow * (ENEMY_SIZE + ENEMY_GAP) - ENEMY_GAP; // Total width of the row
+
+            // Calculate starting X position for the current row to center it
+            startX += (row == 0) ? 0 : (ENEMY_SIZE + ENEMY_GAP) / 2; // Offset for subsequent rows
+            for (int i = 0; i < enemiesInRow; i++) {
+                int posX = startX + i * (ENEMY_SIZE + ENEMY_GAP);
+                bombs.add(new Bomb(posX, currentY, ENEMY_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]));
+            }
+
+            // Move to the next row
+            currentY += ENEMY_SIZE + ENEMY_GAP;
+        }
+    }
+}
