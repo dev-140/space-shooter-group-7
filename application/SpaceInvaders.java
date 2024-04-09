@@ -336,7 +336,7 @@ public class SpaceInvaders extends Application {
 
         public void draw() {
             if (bulletImage != null) {
-                gc.drawImage(bulletImage, posX, posY, size * 6, size * 6);
+                gc.drawImage(bulletImage, posX, posY, size * 0.2, size * 5);
             }
         }
 
