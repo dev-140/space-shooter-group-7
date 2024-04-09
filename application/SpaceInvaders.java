@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+
 public class SpaceInvaders extends Application {
 
     private static final Random RAND = new Random();
@@ -176,6 +177,7 @@ public class SpaceInvaders extends Application {
             gc.setFont(Font.font(35));
             gc.setFill(Color.YELLOW);
             gc.fillText("Game Over\nYour Score is: " + score + "\nClick to play again", WIDTH / 2, HEIGHT / 2.5);
+            StoreData.storeData("1", 100);
         }
         
         // Add new universes
@@ -382,4 +384,5 @@ public class SpaceInvaders extends Application {
             currentY += ENEMY_SIZE + ENEMY_GAP;
         }
     }
+    
 }

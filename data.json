@@ -1,0 +1,16 @@
+{
+	"levels": {
+		"1": {
+			"high_score": 0,
+			"unlock": false
+		},
+		"2": {
+			"high_score": 0,
+			"unlock": false
+		},
+		"3": {
+			"high_score": 0,
+			"unlock": false
+		}
+	}
+}
