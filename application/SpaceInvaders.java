@@ -29,6 +29,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import application.SpaceShooter.Bomb;
+import application.SpaceShooter.Shot;
+
 public class SpaceInvaders extends Application {
 
     private static final Random RAND = new Random();
@@ -53,6 +56,7 @@ public class SpaceInvaders extends Application {
     
     private double mouseX;
     private int score;
+    private int MAX_HITPOINTS = 1; // Changes L
     private boolean gameOver = false;
     private boolean powerUpAvailable = false;
     private boolean powerUpChosen = false;
@@ -133,6 +137,13 @@ public class SpaceInvaders extends Application {
         //DRAW UNIVERSE
         universes.forEach(Universe::draw);
 
+        // Increase hp of enemy for every 50 points , Max hp is 3 // Changes L
+        if (score < 150 && score % 50 == 0) {
+            // Increase the maximum hitpoints for bombs
+            MAX_HITPOINTS++;
+            score++;
+        }
+
         // Update and draw player
         player.update();
         player.draw();
@@ -145,7 +156,7 @@ public class SpaceInvaders extends Application {
             }
         });
 
-        // Update and draw shots
+        // Update and draw shots // Changes L
         for (int i = shots.size() - 1; i >= 0; i--) {
             Shot shot = shots.get(i);
             if (shot.posY < 0 || shot.toRemove) {
@@ -156,8 +167,7 @@ public class SpaceInvaders extends Application {
             shot.draw();
             for (Bomb bomb : bombs) {
                 if (shot.collide(bomb) && !bomb.exploding) {
-                    score++;
-                    bomb.explode();
+                    bomb.hit(); // Decrease bomb's hitpoints
                     shot.toRemove = true;
                 }
             }
@@ -218,6 +228,7 @@ public class SpaceInvaders extends Application {
                 if (buttonType == biggerBulletButton) {
                     // Apply the chosen power-up effect for bigger bullet
                     Shot.size = 12;
+                    MAX_HITPOINTS--; // Changes L
                 } else if (buttonType == fasterBulletButton) {
                     // Apply the chosen power-up effect for faster bullet
                     Shot.speed = 45;
@@ -279,19 +290,27 @@ public class SpaceInvaders extends Application {
             explosionStep = -1;
         }
     }
-
+    
     public class Bomb extends Rocket {
-
-        int SPEED = (score / 5) + 2;
+    	int hitpoints;
+        int SPEED = (score / 10) + 1;
 
         public Bomb(int posX, int posY, int size, Image image) {
             super(posX, posY, size, image);
+            hitpoints = MAX_HITPOINTS;
         }
 
         public void update() {
             super.update();
             if (!exploding && !destroyed) posY += SPEED;
             if (posY > HEIGHT) destroyed = true;
+        }
+        public void hit() {
+            hitpoints--;
+            if (hitpoints <= 0) {
+                explode();
+                score++;
+            }
         }
     }
 
