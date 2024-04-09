@@ -54,7 +54,7 @@ public class SpaceInvaders extends Application {
 
     final int MAX_BOMBS = 10, MAX_SHOTS = MAX_BOMBS * 2;
     boolean gameOver = false;
-    private GraphicsContext gc;
+    private static GraphicsContext gc;
 
     Rocket player;
     List<Shot> shots;
@@ -229,16 +229,20 @@ public class SpaceInvaders extends Application {
     }
 
     // Shot class
-    public class Shot {
+    public static class Shot {
 
         public boolean toRemove;
 
-        int posX, posY, speed = 10;
+        int posX, posY;
         static final int size = 6;
+        static int speed = 10; // Add speed variable
+
+        private Image bulletImage;
 
         public Shot(int posX, int posY) {
             this.posX = posX;
             this.posY = posY;
+            bulletImage = new Image("file:images/bullets.png");
         }
 
         public void update() {
@@ -246,13 +250,8 @@ public class SpaceInvaders extends Application {
         }
 
         public void draw() {
-            gc.setFill(Color.BLUE);
-            if (score >= 50 && score <= 70 || score >= 120) {
-                gc.setFill(Color.YELLOWGREEN);
-                speed = 50;
-                gc.fillRect(posX - 5, posY - 10, size + 10, size + 30);
-            } else {
-                gc.fillOval(posX, posY, size, size);
+            if (bulletImage != null) {
+                gc.drawImage(bulletImage, posX, posY, size * 6, size * 6);
             }
         }
 
@@ -303,7 +302,7 @@ public class SpaceInvaders extends Application {
     }
 
     // Distance method
-    int distance(int x1, int y1, int x2, int y2) {
+    static int distance(int x1, int y1, int x2, int y2) {
         return (int) Math.sqrt(Math.pow((x1 - x2), 2) + Math.pow((y1 - y2), 2));
     }
     
