@@ -1,13 +1,5 @@
 package application;
 
-// Import statements
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.stream.IntStream;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
@@ -23,64 +15,68 @@ import javafx.util.Duration;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 
-public class SpaceInvaders extends Application {
+//FOR OPTION
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
+import javafx.scene.layout.VBox;
 
-    // Constants and variables
+import javafx.application.Platform;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.IntStream;
+
+public class SpaceInvaders extends Application {
 
     private static final Random RAND = new Random();
     private static final int WIDTH = 800;
     private static final int HEIGHT = 600;
     private static final int PLAYER_SIZE = 60;
-    static final Image PLAYER_IMG = new Image("file:images/player.png");
-    static final Image EXPLOSION_IMG = new Image("file:images/explosion.png");
-    static final int EXPLOSION_W = 128;
-    static final int EXPLOSION_ROWS = 3;
-    static final int EXPLOSION_COL = 3;
-    static final int EXPLOSION_H = 128;
-    static final int EXPLOSION_STEPS = 15;
+    private static final int MAX_BOMBS = 10;
+    private static final int MAX_SHOTS = MAX_BOMBS * 2;
+    private static final int EXPLOSION_W = 128;
+    private static final int EXPLOSION_ROWS = 3;
+    private static final int EXPLOSION_COL = 3;
+    private static final int EXPLOSION_H = 128;
+    private static final int EXPLOSION_STEPS = 15;
 
-    static final Image BOMBS_IMG[] = {
-            new Image("file:images/1.png"),
-            new Image("file:images/2.png"),
-            new Image("file:images/3.png"),
-            new Image("file:images/4.png"),
-            new Image("file:images/5.png"),
-            new Image("file:images/6.png"),
-            new Image("file:images/7.png"),
-            new Image("file:images/8.png"),
-            new Image("file:images/9.png"),
-            new Image("file:images/10.png"),
-    };
-
-    final int MAX_BOMBS = 10, MAX_SHOTS = MAX_BOMBS * 2;
-    boolean gameOver = false;
     private static GraphicsContext gc;
+    private Rocket player;
+    private List<Shot> shots;
+    private List<Universe> universes;
+    private List<Bomb> bombs;
 
-    Rocket player;
-    List<Shot> shots;
-    List<Universe> univ;
-    List<Bomb> Bombs;
-
+    private boolean showPowerUpSelection = false; // Combined flag
+    
     private double mouseX;
     private int score;
+    private boolean gameOver = false;
+    private boolean powerUpAvailable = false;
+    private boolean powerUpChosen = false;
+    private Timeline timeline;
 
-    // Main method
-    public static void main(String[] args) {
-        launch();
-    }
+    static final Image PLAYER_IMG = new Image("file:images/player.png");
+    static final Image EXPLOSION_IMG = new Image("file:images/explosion.png");
+    static final Image[] BOMBS_IMG = {
+        new Image("file:images/1.png"),
+        new Image("file:images/2.png"),
+        new Image("file:images/3.png")
+    };
 
-    // Start method
     public void start(Stage stage) throws Exception {
-        Canvas canvas = new Canvas(WIDTH, HEIGHT);   
+        Canvas canvas = new Canvas(WIDTH, HEIGHT);
         gc = canvas.getGraphicsContext2D();
-        Timeline timeline = new Timeline(new KeyFrame(Duration.millis(100), e -> run(gc)));
+        timeline = new Timeline(new KeyFrame(Duration.millis(100), e -> run(gc)));
         timeline.setCycleCount(Timeline.INDEFINITE);
         timeline.play();
         canvas.setCursor(Cursor.MOVE);
         canvas.setOnMouseMoved(e -> mouseX = e.getX());
         canvas.setOnMouseClicked(e -> {
-            if(shots.size() < MAX_SHOTS) shots.add(player.shoot());
-            if(gameOver) { 
+            if (shots.size() < MAX_SHOTS) shots.add(player.shoot());
+            if (gameOver) {
                 gameOver = false;
                 setup();
             }
@@ -95,9 +91,9 @@ public class SpaceInvaders extends Application {
     private static final Duration TRIANGLE_SPAWN_INTERVAL = Duration.seconds(7); // Spawn triangle every 3 seconds
     private Timeline triangleSpawnTimeline;
     private void setup() {
-        univ = new ArrayList<>();
+        universes = new ArrayList<>();
         shots = new ArrayList<>();
-        Bombs = new ArrayList<>();
+        bombs = new ArrayList<>();
         player = new Rocket(WIDTH / 2, HEIGHT - PLAYER_SIZE, PLAYER_SIZE, PLAYER_IMG);
         score = 0;
 //        IntStream.range(0, MAX_BOMBS).mapToObj(i -> this.newBomb()).forEach(Bombs::add); 
@@ -107,7 +103,6 @@ public class SpaceInvaders extends Application {
         createTriangleFormation();
     }
 
-    // Run method
     private void run(GraphicsContext gc) {
         gc.setFill(Color.grayRgb(20));
         gc.fillRect(0, 0, WIDTH, HEIGHT);
@@ -116,23 +111,41 @@ public class SpaceInvaders extends Application {
         gc.setFill(Color.WHITE);
         gc.fillText("Score: " + score, 60, 20);
 
-        if (gameOver) {
-            gc.setFont(Font.font(35));
-            gc.setFill(Color.YELLOW);
-            gc.fillText("Game Over \n Your Score is: " + score + " \n Click to play again", WIDTH / 2, HEIGHT / 2.5);
-        }
-        univ.forEach(Universe::draw);
+        // Debug print
+        System.out.println("Current score: " + score);
 
+        // Check if power-up is available and handle power-up selection
+        if (score > 0 && score % 20 == 0 && !showPowerUpSelection) {
+            showPowerUpSelection = true; // Set flag when score reaches a multiple of 20
+            // Pause the game
+            timeline.stop();
+            // Prompt the player to choose a power-up
+            showPowerUpOptions();
+            score++;
+
+        }
+
+        // Resume the game if power-up selection is done
+        if (powerUpChosen) {
+            timeline.play();
+        }
+
+        //DRAW UNIVERSE
+        universes.forEach(Universe::draw);
+
+        // Update and draw player
         player.update();
         player.draw();
-        player.posX = (int) mouseX;
+        player.posX = (int) (mouseX - player.size / 2); // center the player
 
-        Bombs.stream().peek(Rocket::update).peek(Rocket::draw).forEach(e -> {
-            if (player.colide(e) && !player.exploding) {
+        // Update and draw bombs
+        bombs.stream().peek(Rocket::update).peek(Rocket::draw).forEach(e -> {
+            if (player.collide(e) && !player.exploding) {
                 player.explode();
             }
         });
 
+        // Update and draw shots
         for (int i = shots.size() - 1; i >= 0; i--) {
             Shot shot = shots.get(i);
             if (shot.posY < 0 || shot.toRemove) {
@@ -141,8 +154,8 @@ public class SpaceInvaders extends Application {
             }
             shot.update();
             shot.draw();
-            for (Bomb bomb : Bombs) {
-                if (shot.colide(bomb) && !bomb.exploding) {
+            for (Bomb bomb : bombs) {
+                if (shot.collide(bomb) && !bomb.exploding) {
                     score++;
                     bomb.explode();
                     shot.toRemove = true;
@@ -156,16 +169,71 @@ public class SpaceInvaders extends Application {
 //            }
 //        }
 
+        // Check if the game is over
         gameOver = player.destroyed;
-        if (RAND.nextInt(10) > 2) {
-            univ.add(new Universe());
+
+        if (gameOver) {
+            gc.setFont(Font.font(35));
+            gc.setFill(Color.YELLOW);
+            gc.fillText("Game Over\nYour Score is: " + score + "\nClick to play again", WIDTH / 2, HEIGHT / 2.5);
         }
-        univ.removeIf(universe -> universe.posY > HEIGHT);
+        
+        // Add new universes
+        if (RAND.nextInt(10) > 2) {
+            universes.add(new Universe());
+        }
+
+        // Remove universes that have gone past the screen
+        universes.removeIf(universe -> universe.posY > HEIGHT);
+    }
+    private Bomb newBomb() {
+        return new Bomb(50 + RAND.nextInt(WIDTH - 100), 0, PLAYER_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]);
     }
 
-    // Rocket class
-    public class Rocket {
+    private static int distance(int x1, int y1, int x2, int y2) {
+        return (int) Math.sqrt(Math.pow((x1 - x2), 2) + Math.pow((y1 - y2), 2));
+    }
 
+    private void showPowerUpOptions() {
+        Platform.runLater(() -> {
+            Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.setTitle("Choose Power-Up");
+            dialog.setHeaderText("Select a power-up:");
+
+            // Create buttons for different power-up options
+            ButtonType biggerBulletButton = new ButtonType("Bigger Bullet");
+            ButtonType fasterBulletButton = new ButtonType("Faster Bullet");
+
+            // Add buttons to the dialog
+            dialog.getDialogPane().getButtonTypes().addAll(biggerBulletButton, fasterBulletButton);
+
+            // Handle button actions
+            dialog.setOnCloseRequest(event -> {
+                // If the dialog is closed without choosing a power-up, resume the game
+                timeline.play();
+            });
+
+            // Show the dialog and wait for the user to choose a power-up
+            dialog.showAndWait().ifPresent(buttonType -> {
+                if (buttonType == biggerBulletButton) {
+                    // Apply the chosen power-up effect for bigger bullet
+                    Shot.size = 12;
+                } else if (buttonType == fasterBulletButton) {
+                    // Apply the chosen power-up effect for faster bullet
+                    Shot.speed = 45;
+                }
+             // Reset the flag after applying the power-up effect:
+                showPowerUpSelection = false;
+            });
+        });
+    }
+
+
+    public static void main(String[] args) {
+        launch();
+    }
+
+    public class Rocket {
         int posX, posY, size;
         boolean exploding, destroyed;
         Image img;
@@ -179,7 +247,10 @@ public class SpaceInvaders extends Application {
         }
 
         public Shot shoot() {
-            return new Shot(posX + size / 2 - Shot.size / 2, posY - Shot.size);
+            // Adjust the starting position of the bullet by subtracting half of the bullet's size
+            int bulletX = posX + size / 2 - Shot.size / 2;
+            // Create a new Shot object
+            return new Shot(bulletX, posY - Shot.size);
         }
 
         public void update() {
@@ -189,17 +260,17 @@ public class SpaceInvaders extends Application {
 
         public void draw() {
             if (exploding) {
-                gc.drawImage(EXPLOSION_IMG, explosionStep % EXPLOSION_COL * EXPLOSION_W,
-                        (explosionStep / EXPLOSION_ROWS) * EXPLOSION_H + 1, EXPLOSION_W, EXPLOSION_H, posX, posY,
-                        size, size);
+                gc.drawImage(EXPLOSION_IMG, explosionStep % EXPLOSION_COL * EXPLOSION_W, (explosionStep / EXPLOSION_ROWS) * EXPLOSION_H + 1,
+                        EXPLOSION_W, EXPLOSION_H,
+                        posX, posY, size, size);
             } else {
                 gc.drawImage(img, posX, posY, size, size);
             }
         }
 
-        public boolean colide(Rocket other) {
-            int d = distance(this.posX + size / 2, this.posY + size / 2, other.posX + other.size / 2,
-                    other.posY + other.size / 2);
+        public boolean collide(Rocket other) {
+            int d = distance(this.posX + size / 2, this.posY + size / 2,
+                    other.posX + other.size / 2, other.posY + other.size / 2);
             return d < other.size / 2 + this.size / 2;
         }
 
@@ -207,10 +278,8 @@ public class SpaceInvaders extends Application {
             exploding = true;
             explosionStep = -1;
         }
-
     }
 
-    // Bomb class
     public class Bomb extends Rocket {
 
         int SPEED = (score / 5) + 2;
@@ -221,10 +290,8 @@ public class SpaceInvaders extends Application {
 
         public void update() {
             super.update();
-            if (!exploding && !destroyed)
-                posY += SPEED;
-            if (posY > HEIGHT)
-                destroyed = true;
+            if (!exploding && !destroyed) posY += SPEED;
+            if (posY > HEIGHT) destroyed = true;
         }
     }
 
@@ -232,9 +299,8 @@ public class SpaceInvaders extends Application {
     public static class Shot {
 
         public boolean toRemove;
-
         int posX, posY;
-        static final int size = 6;
+        static int size = 6;
         static int speed = 10; // Add speed variable
 
         private Image bulletImage;
@@ -246,7 +312,7 @@ public class SpaceInvaders extends Application {
         }
 
         public void update() {
-            posY -= speed;
+            posY -= speed; // Update the position based on speed
         }
 
         public void draw() {
@@ -255,15 +321,13 @@ public class SpaceInvaders extends Application {
             }
         }
 
-        public boolean colide(Rocket Rocket) {
-            int distance = distance(this.posX + size / 2, this.posY + size / 2, Rocket.posX + Rocket.size / 2,
-                    Rocket.posY + Rocket.size / 2);
-            return distance < Rocket.size / 2 + size / 2;
+        public boolean collide(Rocket rocket) {
+            int distance = distance(this.posX + size / 2, this.posY + size / 2,
+                    rocket.posX + rocket.size / 2, rocket.posY + rocket.size / 2);
+            return distance < rocket.size / 2 + size / 2;
         }
-
     }
 
-    // Universe class
     public class Universe {
         int posX, posY;
         private int h, w, r, g, b;
@@ -278,32 +342,17 @@ public class SpaceInvaders extends Application {
             g = RAND.nextInt(100) + 150;
             b = RAND.nextInt(100) + 150;
             opacity = RAND.nextFloat();
-            if (opacity < 0)
-                opacity *= -1;
-            if (opacity > 0.5)
-                opacity = 0.5;
+            if (opacity < 0) opacity *= -1;
+            if (opacity > 0.5) opacity = 0.5;
         }
 
         public void draw() {
-            if (opacity > 0.8)
-                opacity -= 0.01;
-            if (opacity < 0.1)
-                opacity += 0.01;
+            if (opacity > 0.8) opacity -= 0.01;
+            if (opacity < 0.1) opacity += 0.01;
             gc.setFill(Color.rgb(r, g, b, opacity));
             gc.fillOval(posX, posY, w, h);
             posY += 20;
         }
-    }
-
-    // New bomb method
-    Bomb newBomb() {
-        return new Bomb(50 + RAND.nextInt(WIDTH - 100), 0, PLAYER_SIZE,
-                BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]);
-    }
-
-    // Distance method
-    static int distance(int x1, int y1, int x2, int y2) {
-        return (int) Math.sqrt(Math.pow((x1 - x2), 2) + Math.pow((y1 - y2), 2));
     }
     
     private static final int TRIANGLE_ROWS = 3;
@@ -326,7 +375,7 @@ public class SpaceInvaders extends Application {
             startX += (row == 0) ? 0 : (ENEMY_SIZE + ENEMY_GAP) / 2; // Offset for subsequent rows
             for (int i = 0; i < enemiesInRow; i++) {
                 int posX = startX + i * (ENEMY_SIZE + ENEMY_GAP);
-                Bombs.add(new Bomb(posX, currentY, ENEMY_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]));
+                bombs.add(new Bomb(posX, currentY, ENEMY_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]));
             }
 
             // Move to the next row
