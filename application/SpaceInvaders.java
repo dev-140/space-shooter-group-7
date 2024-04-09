@@ -227,7 +227,7 @@ public class SpaceInvaders extends Application {
             dialog.showAndWait().ifPresent(buttonType -> {
                 if (buttonType == biggerBulletButton) {
                     // Apply the chosen power-up effect for bigger bullet
-                    Shot.size = 12;
+                    Shot.size *= 1.5;
                     MAX_HITPOINTS--; // Changes L
                 } else if (buttonType == fasterBulletButton) {
                     // Apply the chosen power-up effect for faster bullet
