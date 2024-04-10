@@ -116,6 +116,8 @@ public class SpaceInvaders extends Application {
         triangleSpawnTimeline.play();
         createTriangleFormation();        
     }
+    
+    
 
     private void run(GraphicsContext gc) {
         gc.setFill(Color.grayRgb(20));
@@ -212,6 +214,21 @@ public class SpaceInvaders extends Application {
                 player.explode();
             }
         });
+        //Boss movements
+        for (BossH bossH : bossH) {
+            // Calculate the offset between the player and the boss
+            int offsetX = (player.posX - (bossH.posX + 60))/20;
+            
+            // Update boss position based on the player's position
+            bossH.posX += offsetX;            
+        }
+        for (Boss boss : boss) {
+            // Calculate the offset between the player and the boss
+            int offsetX = (player.posX - (boss.posX + 70))/22;
+            
+            // Update boss position based on the player's position
+            boss.posX += offsetX;            
+        }
         // Update and draw shots // Changes L
         for (int i = shots.size() - 1; i >= 0; i--) {
             Shot shot = shots.get(i);
@@ -537,12 +554,12 @@ public class SpaceInvaders extends Application {
     
     //boss formation
     private void createBossFormation() {
-        int currentY = -2000; // Starting Y position of the triangle formation
+        int currentY = -210*11; // Starting Y position of the triangle formation
         
         // Calculate a random starting X position within the visible area of the screen
         
         //spawn head
-        int posX = startX;
+        int posX = (WIDTH - 180) / 2;
        
         for (int row = 0; row < 12; row++) {
             int enemiesInRow = 1; // Number of enemies in the current row
