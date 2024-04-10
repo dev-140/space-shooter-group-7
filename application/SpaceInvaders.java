@@ -133,7 +133,7 @@ public class SpaceInvaders extends Application {
         System.out.println("Current score: " + score);
 
         // Check if power-up is available and handle power-up selection
-        if (score > 0 && score % 30 == 0 && !showPowerUpSelection && score < 152) {
+        if (score > 0 && score % 35 == 0 && !showPowerUpSelection && score < 152) {
             showPowerUpSelection = true; // Set flag when score reaches a multiple of 20
             // Pause the game
             timeline.stop();
@@ -561,7 +561,7 @@ public class SpaceInvaders extends Application {
     
     //boss formation
     private void createBossFormation() {
-        int currentY = (-520*11) - 270; // Starting Y position of the triangle formation
+        int currentY = (-500*11) - 400; // Starting Y position of the triangle formation
         
         // Calculate a random starting X position within the visible area of the screen
         
