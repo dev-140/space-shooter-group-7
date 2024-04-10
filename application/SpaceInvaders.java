@@ -14,6 +14,8 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 
 //FOR OPTION
 import javafx.scene.control.Alert;
@@ -131,7 +133,7 @@ public class SpaceInvaders extends Application {
         System.out.println("Current score: " + score);
 
         // Check if power-up is available and handle power-up selection
-        if (score > 0 && score % 50 == 0 && !showPowerUpSelection && score < 150) {
+        if (score > 0 && score % 50 == 0 && !showPowerUpSelection && score < 152) {
             showPowerUpSelection = true; // Set flag when score reaches a multiple of 20
             // Pause the game
             timeline.stop();
@@ -148,17 +150,22 @@ public class SpaceInvaders extends Application {
         if(score >= 150 && score < 151 && allBossesDefeated) {
         	createBossFormation();
         	score++;
-        	gc.setFill(Color.BLACK);
+        	
+        }
+        if (score >= 150) {
+        	
+        	Font font = Font.font("Palatino Linotype", 25);
+            gc.setFill(Color.web("#200000"));
             gc.fillRect(0, 0, WIDTH, HEIGHT);
-            gc.setFont(Font.font(35));
+            gc.setFont(font);
             gc.setFill(Color.RED);
             gc.setTextAlign(TextAlignment.CENTER);
-            gc.fillText("WARNING\nBOSS INCOMING", WIDTH / 2, HEIGHT / 2.5);
+            gc.fillText("Oroboros, the Endless Devourer", WIDTH / 2, 35);
         }
         
         
         
-        if (score > 265) {
+        if (score > 850) {
             // Stop the game
             timeline.stop();
             
@@ -217,14 +224,14 @@ public class SpaceInvaders extends Application {
         //Boss movements
         for (BossH bossH : bossH) {
             // Calculate the offset between the player and the boss
-            int offsetX = (player.posX - (bossH.posX + 60))/20;
+            int offsetX = (player.posX - (bossH.posX + 180))/20;
             
             // Update boss position based on the player's position
             bossH.posX += offsetX;            
         }
         for (Boss boss : boss) {
             // Calculate the offset between the player and the boss
-            int offsetX = (player.posX - (boss.posX + 70))/22;
+            int offsetX = (player.posX - (boss.posX + 190))/22;
             
             // Update boss position based on the player's position
             boss.posX += offsetX;            
@@ -410,11 +417,11 @@ public class SpaceInvaders extends Application {
     
     public class BossH extends Rocket {
     	int hitpoints;
-        int SPEED = 2;
+        int SPEED = 3;
 
         public BossH(int posX, int posY, int size, Image image) {
             super(posX, posY, size, image);
-            hitpoints = 30 + (7*MAX_HITPOINTS);
+            hitpoints = 70 + (10*MAX_HITPOINTS);
             
         }
 
@@ -426,18 +433,18 @@ public class SpaceInvaders extends Application {
             hitpoints--;
             if (hitpoints <= 0) {
                 explode();
-                score += 10;
+                score += 100;
             }
         }
     }
     
     public class Boss extends Rocket {
     	int hitpoints;
-        int SPEED = 2;
+        int SPEED = 3;
 
         public Boss(int posX, int posY, int size, Image image) {
             super(posX, posY, size, image);
-            hitpoints = 30;
+            hitpoints = 70;
         }
 
         public void update() {
@@ -448,14 +455,14 @@ public class SpaceInvaders extends Application {
             hitpoints--;
             if (hitpoints <= 0) {
                 explode();
-                score++;
+                score+= 50;
             }
         }
         public void collapse() {
             hitpoints -= 30;
             if (hitpoints <= 0) {
                 explode();
-                score++;
+                score+= 50;
             }
         }
     }
@@ -554,7 +561,7 @@ public class SpaceInvaders extends Application {
     
     //boss formation
     private void createBossFormation() {
-        int currentY = -210*11; // Starting Y position of the triangle formation
+        int currentY = (-520*11) - 270; // Starting Y position of the triangle formation
         
         // Calculate a random starting X position within the visible area of the screen
         
@@ -563,13 +570,13 @@ public class SpaceInvaders extends Application {
        
         for (int row = 0; row < 12; row++) {
             int enemiesInRow = 1; // Number of enemies in the current row
-            currentY += 160;
-            boss.add(new Boss(posX, currentY, 200, BOSS_IMG));
+            currentY += 410;
+            boss.add(new Boss(posX, currentY, 500, BOSS_IMG));
         }
 
         // Add boss head (BOSS_H_IMG)
-        currentY += 160; // Move to the next row
-        bossH.add(new BossH(posX + 10, currentY, 180, BOSS_H_IMG));
+        currentY += 410; // Move to the next row
+        bossH.add(new BossH(posX + 10, currentY, 480, BOSS_H_IMG));
             
         }
         
