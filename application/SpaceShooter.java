@@ -126,7 +126,6 @@ public class SpaceShooter extends Application {
             // Prompt the player to choose a power-up
             showPowerUpOptions();
             score++;
-
         }
 
         // Resume the game if power-up selection is done
