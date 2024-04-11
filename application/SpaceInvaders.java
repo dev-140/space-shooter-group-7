@@ -14,6 +14,8 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 
 //FOR OPTION
 import javafx.scene.control.Alert;
@@ -29,6 +31,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import application.SpaceShooter.Bomb;
+import application.SpaceShooter.Shot;
 
 public class SpaceInvaders extends Application {
 
@@ -43,29 +47,38 @@ public class SpaceInvaders extends Application {
     private static final int EXPLOSION_COL = 3;
     private static final int EXPLOSION_H = 128;
     private static final int EXPLOSION_STEPS = 15;
+    
+    
+    
 
     private static GraphicsContext gc;
     private Rocket player;
     private List<Shot> shots;
     private List<Universe> universes;
     private List<Bomb> bombs;
+    private List<BossH> bossH;
+    private List<Boss> boss;
 
     private boolean showPowerUpSelection = false; // Combined flag
-    
     private double mouseX;
     private int score;
+    private int MAX_HITPOINTS = 1; // Changes L
     private boolean gameOver = false;
     private boolean powerUpAvailable = false;
     private boolean powerUpChosen = false;
     private Timeline timeline;
+    
 
     static final Image PLAYER_IMG = new Image("file:images/player.png");
     static final Image EXPLOSION_IMG = new Image("file:images/explosion.png");
     static final Image[] BOMBS_IMG = {
         new Image("file:images/1.png"),
-        new Image("file:images/2.png"),
-        new Image("file:images/3.png")
+        new Image("file:images/2.png")
     };
+    
+    //Boss sprites
+    static final Image BOSS_H_IMG = new Image("file:images/head.png");
+    static final Image BOSS_IMG = new Image("file:images/body.png");
 
     public void start(Stage stage) throws Exception {
         Canvas canvas = new Canvas(WIDTH, HEIGHT);
@@ -95,14 +108,18 @@ public class SpaceInvaders extends Application {
         universes = new ArrayList<>();
         shots = new ArrayList<>();
         bombs = new ArrayList<>();
+        boss = new ArrayList<>();
+        bossH = new ArrayList<>();
         player = new Rocket(WIDTH / 2, HEIGHT - PLAYER_SIZE, PLAYER_SIZE, PLAYER_IMG);
         score = 0;
 //        IntStream.range(0, MAX_BOMBS).mapToObj(i -> this.newBomb()).forEach(Bombs::add); 
         triangleSpawnTimeline = new Timeline(new KeyFrame(TRIANGLE_SPAWN_INTERVAL, e -> createTriangleFormation()));
         triangleSpawnTimeline.setCycleCount(Timeline.INDEFINITE);
         triangleSpawnTimeline.play();
-        createTriangleFormation();
+        createTriangleFormation();        
     }
+    
+    
 
     private void run(GraphicsContext gc) {
         gc.setFill(Color.grayRgb(20));
@@ -116,7 +133,7 @@ public class SpaceInvaders extends Application {
         System.out.println("Current score: " + score);
 
         // Check if power-up is available and handle power-up selection
-        if (score > 0 && score % 20 == 0 && !showPowerUpSelection) {
+        if (score > 0 && score % 35 == 0 && !showPowerUpSelection && score < 152) {
             showPowerUpSelection = true; // Set flag when score reaches a multiple of 20
             // Pause the game
             timeline.stop();
@@ -125,7 +142,43 @@ public class SpaceInvaders extends Application {
             score++;
 
         }
+        
+        
+        //all boss defeated and boss spawn
+        boolean allBossesDefeated = boss.isEmpty() && bossH.isEmpty();
+        
+        if(score >= 150 && score < 151 && allBossesDefeated) {
+        	createBossFormation();
+        	score++;
+        	
+        }
+        if (score >= 150) {
+        	
+        	Font font = Font.font("Palatino Linotype", 25);
+            gc.setFill(Color.web("#200000"));
+            gc.fillRect(0, 0, WIDTH, HEIGHT);
+            gc.setFont(font);
+            gc.setFill(Color.RED);
+            gc.setTextAlign(TextAlignment.CENTER);
+            gc.fillText("Oroboros, the Endless Devourer", WIDTH / 2, 35);
+        }
+        
+        
+        
+        if (score > 850) {
+            // Stop the game
+            timeline.stop();
+            
+            // Display "LEVEL CLEARED" screen
+            gc.setFill(Color.BLACK);
+            gc.fillRect(0, 0, WIDTH, HEIGHT);
+            gc.setFont(Font.font(35));
+            gc.setFill(Color.WHITE);
+            gc.setTextAlign(TextAlignment.CENTER);
+            gc.fillText("OROBOROS SLAIN\nYour Score is: " + score + "\nnext level still work in progress", WIDTH / 2, HEIGHT / 2.5);
+        }
 
+        
         // Resume the game if power-up selection is done
         if (powerUpChosen) {
             timeline.play();
@@ -134,6 +187,14 @@ public class SpaceInvaders extends Application {
         //DRAW UNIVERSE
         universes.forEach(Universe::draw);
 
+        // Increase hp of enemy for every 50 points , Max hp is 3 // Changes L
+        if (score < 150 && score % 50 == 0) {
+            // Increase the maximum hitpoints for bombs
+            MAX_HITPOINTS++;
+            score++;
+        }
+        
+        
         // Update and draw player
         player.update();
         player.draw();
@@ -145,8 +206,37 @@ public class SpaceInvaders extends Application {
                 player.explode();
             }
         });
-
-        // Update and draw shots
+        
+     
+        
+     // Update and draw boss
+        boss.stream().peek(Rocket::update).peek(Rocket::draw).forEach(e -> {
+            if (player.collide(e) && !player.exploding) {
+                player.explode();
+            }
+        });
+     // Update and draw boss head
+        bossH.stream().peek(Rocket::update).peek(Rocket::draw).forEach(e -> {
+            if (player.collide(e) && !player.exploding) {
+                player.explode();
+            }
+        });
+        //Boss movements
+        for (BossH bossH : bossH) {
+            // Calculate the offset between the player and the boss
+            int offsetX = (player.posX - (bossH.posX + 180))/20;
+            
+            // Update boss position based on the player's position
+            bossH.posX += offsetX;            
+        }
+        for (Boss boss : boss) {
+            // Calculate the offset between the player and the boss
+            int offsetX = (player.posX - (boss.posX + 190))/22;
+            
+            // Update boss position based on the player's position
+            boss.posX += offsetX;            
+        }
+        // Update and draw shots // Changes L
         for (int i = shots.size() - 1; i >= 0; i--) {
             Shot shot = shots.get(i);
             if (shot.posY < 0 || shot.toRemove) {
@@ -157,12 +247,25 @@ public class SpaceInvaders extends Application {
             shot.draw();
             for (Bomb bomb : bombs) {
                 if (shot.collide(bomb) && !bomb.exploding) {
-                    score++;
-                    bomb.explode();
+                    bomb.hit(); // Decrease bomb's hitpoints
+                    shot.toRemove = true;
+                }
+            }
+            for (Boss boss : boss) {
+                if (shot.collide(boss) && !boss.exploding) {
+                    boss.hit(); // Decrease bomb's hitpoints
+                    shot.toRemove = true;
+                }
+            }
+            for (BossH bossH : bossH) {
+                if (shot.collide(bossH) && !bossH.exploding) {
+                    bossH.hit(); // Decrease bomb's hitpoints
                     shot.toRemove = true;
                 }
             }
         }
+        
+     
 
 //        for (int i = Bombs.size() - 1; i >= 0; i--) {
 //            if (Bombs.get(i).destroyed) {
@@ -190,6 +293,13 @@ public class SpaceInvaders extends Application {
     }
     private Bomb newBomb() {
         return new Bomb(50 + RAND.nextInt(WIDTH - 100), 0, PLAYER_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]);
+    }
+    //boss 
+    private BossH newBossH() {
+        return new BossH(50 + RAND.nextInt(WIDTH - 100), 0, PLAYER_SIZE, BOSS_H_IMG);
+    }
+    private Boss newBoss() {
+        return new Boss(50 + RAND.nextInt(WIDTH - 100), 0, PLAYER_SIZE, BOSS_IMG);
     }
 
     private static int distance(int x1, int y1, int x2, int y2) {
@@ -219,10 +329,11 @@ public class SpaceInvaders extends Application {
             dialog.showAndWait().ifPresent(buttonType -> {
                 if (buttonType == biggerBulletButton) {
                     // Apply the chosen power-up effect for bigger bullet
-                    Shot.size = 12;
+                    Shot.size *= 1.5;
+                    MAX_HITPOINTS--; // Changes L
                 } else if (buttonType == fasterBulletButton) {
                     // Apply the chosen power-up effect for faster bullet
-                    Shot.speed = 45;
+                    Shot.speed *= 2;
                 }
              // Reset the flag after applying the power-up effect:
                 showPowerUpSelection = false;
@@ -281,21 +392,82 @@ public class SpaceInvaders extends Application {
             explosionStep = -1;
         }
     }
-
+    
     public class Bomb extends Rocket {
-
-        int SPEED = (score / 5) + 2;
+    	int hitpoints;
+        int SPEED = (score / 10) + 1;
 
         public Bomb(int posX, int posY, int size, Image image) {
             super(posX, posY, size, image);
-        }
+            hitpoints = MAX_HITPOINTS;
+        }	
 
         public void update() {
             super.update();
             if (!exploding && !destroyed) posY += SPEED;
             if (posY > HEIGHT) destroyed = true;
         }
+        public void hit() {
+            hitpoints--;
+            if (hitpoints <= 0  ) {
+                explode();
+                score++;
+            }
+        }
     }
+    
+    public class BossH extends Rocket {
+    	int hitpoints;
+        int SPEED = 3;
+
+        public BossH(int posX, int posY, int size, Image image) {
+            super(posX, posY, size, image);
+            hitpoints = 70 + (10*MAX_HITPOINTS);
+            
+        }
+
+        public void update() {
+            super.update();
+            if (!exploding && !destroyed) posY += SPEED;
+        }
+        public void hit() {
+            hitpoints--;
+            if (hitpoints <= 0) {
+                explode();
+                score += 100;
+            }
+        }
+    }
+    
+    public class Boss extends Rocket {
+    	int hitpoints;
+        int SPEED = 3;
+
+        public Boss(int posX, int posY, int size, Image image) {
+            super(posX, posY, size, image);
+            hitpoints = 70;
+        }
+
+        public void update() {
+            super.update();
+            if (!exploding && !destroyed) posY += SPEED;
+        }
+        public void hit() {
+            hitpoints--;
+            if (hitpoints <= 0) {
+                explode();
+                score+= 50;
+            }
+        }
+        public void collapse() {
+            hitpoints -= 30;
+            if (hitpoints <= 0) {
+                explode();
+                score+= 50;
+            }
+        }
+    }
+    
 
     // Shot class
     public static class Shot {
@@ -319,7 +491,7 @@ public class SpaceInvaders extends Application {
 
         public void draw() {
             if (bulletImage != null) {
-                gc.drawImage(bulletImage, posX, posY, size * 6, size * 6);
+                gc.drawImage(bulletImage, posX, posY, size * 0.2, size * 5);
             }
         }
 
@@ -357,32 +529,57 @@ public class SpaceInvaders extends Application {
         }
     }
     
+    
     private static final int TRIANGLE_ROWS = 3;
-    private static final int ENEMY_SIZE = 40;
+    private static final int ENEMY_SIZE = 50;
     private static final int ENEMY_GAP = 30;
     private int startX = 100;
 
     // Method to create triangle formation of enemies
     private void createTriangleFormation() {
-        int currentY = 50; // Starting Y position of the triangle formation
+    	if(score < 150 || score >= 160) {
+        int currentY = -210; // Starting Y position of the triangle formation
 
         // Calculate a random starting X position within the visible area of the screen
         int startX = RAND.nextInt(WIDTH - (TRIANGLE_ROWS * (ENEMY_SIZE + ENEMY_GAP)));
-
+        
         for (int row = 0; row < TRIANGLE_ROWS; row++) {
             int enemiesInRow = TRIANGLE_ROWS - row; // Number of enemies in the current row
-            int rowWidth = enemiesInRow * (ENEMY_SIZE + ENEMY_GAP) - ENEMY_GAP; // Total width of the row
-
+           
             // Calculate starting X position for the current row to center it
             startX += (row == 0) ? 0 : (ENEMY_SIZE + ENEMY_GAP) / 2; // Offset for subsequent rows
             for (int i = 0; i < enemiesInRow; i++) {
                 int posX = startX + i * (ENEMY_SIZE + ENEMY_GAP);
                 bombs.add(new Bomb(posX, currentY, ENEMY_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]));
             }
+        
 
             // Move to the next row
             currentY += ENEMY_SIZE + ENEMY_GAP;
         }
+    	}
     }
     
+    //boss formation
+    private void createBossFormation() {
+        int currentY = (-500*11) - 400; // Starting Y position of the triangle formation
+        
+        // Calculate a random starting X position within the visible area of the screen
+        
+        //spawn head
+        int posX = (WIDTH - 180) / 2;
+       
+        for (int row = 0; row < 12; row++) {
+            int enemiesInRow = 1; // Number of enemies in the current row
+            currentY += 410;
+            boss.add(new Boss(posX, currentY, 500, BOSS_IMG));
+        }
+
+        // Add boss head (BOSS_H_IMG)
+        currentY += 410; // Move to the next row
+        bossH.add(new BossH(posX + 10, currentY, 480, BOSS_H_IMG));
+            
+        }
+        
+   
 }
