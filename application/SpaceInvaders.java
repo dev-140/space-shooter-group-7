@@ -280,6 +280,7 @@ public class SpaceInvaders extends Application {
             gc.setFont(Font.font(35));
             gc.setFill(Color.YELLOW);
             gc.fillText("Game Over\nYour Score is: " + score + "\nClick to play again", WIDTH / 2, HEIGHT / 2.5);
+            StoreData.storeData("1", 100);
         }
         
         // Add new universes
