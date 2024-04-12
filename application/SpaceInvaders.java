@@ -313,7 +313,7 @@ public class SpaceInvaders extends Application {
             dialog.setHeaderText("Select a power-up:");
 
             // Create buttons for different power-up options
-            ButtonType biggerBulletButton = new ButtonType("Bigger Bullet");
+            ButtonType biggerBulletButton = new ButtonType("Stronger Bullet");
             ButtonType fasterBulletButton = new ButtonType("Faster Bullet");
 
             // Add buttons to the dialog
