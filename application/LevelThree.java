@@ -31,6 +31,10 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import application.LevelThree.Boss;
+import application.LevelThree.BossH;
+import application.LevelThree.Rocket;
+import application.LevelThree.Universe;
 import application.SpaceShooter.Bomb;
 import application.SpaceShooter.Shot;
 
@@ -110,6 +114,7 @@ public class LevelThree extends Application {
         bombs = new ArrayList<>();
         boss = new ArrayList<>();
         bossH = new ArrayList<>();
+        asteroids = new ArrayList<>();
         player = new Rocket(WIDTH / 2, HEIGHT - PLAYER_SIZE, PLAYER_SIZE, PLAYER_IMG);
         score = 0;
 //        IntStream.range(0, MAX_BOMBS).mapToObj(i -> this.newBomb()).forEach(Bombs::add); 
@@ -118,8 +123,20 @@ public class LevelThree extends Application {
         triangleSpawnTimeline.play();
         createTriangleFormation();        
     }
+
+    private List<Asteroid> asteroids;
+    public class Asteroid extends Rocket {
+        int SPEED = 20;
     
+        public Asteroid(int posX, int posY, int size, Image image) {
+            super(posX, posY, size, image);
+        }
     
+        public void update() {
+            super.update();
+            if (!exploding && !destroyed) posY += SPEED;
+        }
+    }
 
     private void run(GraphicsContext gc) {
         gc.setFill(Color.grayRgb(20));
@@ -142,6 +159,20 @@ public class LevelThree extends Application {
             score++;
 
         }
+        
+        if (RAND.nextInt(100) < 3) {
+            Asteroid newAsteroid = new Asteroid(50 + RAND.nextInt(WIDTH - 100), 0, PLAYER_SIZE, new Image("file:images/3.png"));
+            asteroids.add(newAsteroid);
+        }
+        
+        asteroids.forEach(asteroid -> {
+            asteroid.update();
+            asteroid.draw();
+
+            if (player.collide(asteroid) && !player.exploding) {
+                player.explode();
+            }
+        });
         
         
         //all boss defeated and boss spawn
