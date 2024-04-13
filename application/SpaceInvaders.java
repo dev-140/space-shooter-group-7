@@ -19,13 +19,17 @@ import javafx.scene.text.FontWeight;
 
 //FOR OPTION
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
 import javafx.scene.layout.VBox;
 
 import javafx.application.Platform;
+import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -34,7 +38,16 @@ import java.util.stream.IntStream;
 import application.SpaceShooter.Bomb;
 import application.SpaceShooter.Shot;
 
-public class LevelOne extends Application {
+import javafx.stage.Stage;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+
+import javafx.scene.layout.HBox;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+
+
+public class SpaceInvaders {
 
     private static final Random RAND = new Random();
     private static final int WIDTH = 800;
@@ -48,9 +61,6 @@ public class LevelOne extends Application {
     private static final int EXPLOSION_H = 128;
     private static final int EXPLOSION_STEPS = 15;
     
-    
-    
-
     private static GraphicsContext gc;
     private Rocket player;
     private List<Shot> shots;
@@ -68,6 +78,8 @@ public class LevelOne extends Application {
     private boolean powerUpChosen = false;
     private Timeline timeline;
     
+    private Button pauseButton;
+    
 
     static final Image PLAYER_IMG = new Image("file:images/player.png");
     static final Image EXPLOSION_IMG = new Image("file:images/explosion.png");
@@ -79,7 +91,7 @@ public class LevelOne extends Application {
     //Boss sprites
     static final Image BOSS_H_IMG = new Image("file:images/head.png");
     static final Image BOSS_IMG = new Image("file:images/body.png");
-
+    
     public void start(Stage stage) throws Exception {
         Canvas canvas = new Canvas(WIDTH, HEIGHT);
         gc = canvas.getGraphicsContext2D();
@@ -97,8 +109,9 @@ public class LevelOne extends Application {
         });
         setup();
         stage.setScene(new Scene(new StackPane(canvas)));
-        stage.setTitle("Space Invaders");
+        stage.setTitle("Heaven's Gate");
         stage.show();
+        
     }
 
     // Setup method
@@ -341,9 +354,9 @@ public class LevelOne extends Application {
     }
 
 
-    public static void main(String[] args) {
+    /*public static void main(String[] args) {
         launch();
-    }
+    }*/
 
     public class Rocket {
         int posX, posY, size;
@@ -534,23 +547,28 @@ public class LevelOne extends Application {
     private static final int ENEMY_GAP = 30;
     private int startX = 100;
 
+    // Method to create triangle formation of enemies
     private void createTriangleFormation() {
     	if(score < 150 || score >= 160) {
-	        int currentY = -210;
-	
-	        int startX = RAND.nextInt(WIDTH - (TRIANGLE_ROWS * (ENEMY_SIZE + ENEMY_GAP)));
-	        
-	        for (int row = 0; row < TRIANGLE_ROWS; row++) {
-	            int enemiesInRow = TRIANGLE_ROWS - row;
-	           
-	            startX += (row == 0) ? 0 : (ENEMY_SIZE + ENEMY_GAP) / 2;
-	            for (int i = 0; i < enemiesInRow; i++) {
-	                int posX = startX + i * (ENEMY_SIZE + ENEMY_GAP);
-	                bombs.add(new Bomb(posX, currentY, ENEMY_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]));
-	            }
-	        
-	            currentY += ENEMY_SIZE + ENEMY_GAP;
-	        }
+        int currentY = -210; // Starting Y position of the triangle formation
+
+        // Calculate a random starting X position within the visible area of the screen
+        int startX = RAND.nextInt(WIDTH - (TRIANGLE_ROWS * (ENEMY_SIZE + ENEMY_GAP)));
+        
+        for (int row = 0; row < TRIANGLE_ROWS; row++) {
+            int enemiesInRow = TRIANGLE_ROWS - row; // Number of enemies in the current row
+           
+            // Calculate starting X position for the current row to center it
+            startX += (row == 0) ? 0 : (ENEMY_SIZE + ENEMY_GAP) / 2; // Offset for subsequent rows
+            for (int i = 0; i < enemiesInRow; i++) {
+                int posX = startX + i * (ENEMY_SIZE + ENEMY_GAP);
+                bombs.add(new Bomb(posX, currentY, ENEMY_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]));
+            }
+        
+
+            // Move to the next row
+            currentY += ENEMY_SIZE + ENEMY_GAP;
+        }
     	}
     }
     
@@ -573,5 +591,6 @@ public class LevelOne extends Application {
         currentY += 410; // Move to the next row
         bossH.add(new BossH(posX + 10, currentY, 480, BOSS_H_IMG));
             
-        }  
+        }
+    
 }
