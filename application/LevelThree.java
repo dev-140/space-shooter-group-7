@@ -405,6 +405,20 @@ public class LevelThree extends Application {
             super.update();
             if (!exploding && !destroyed) posY += SPEED;
             if (posY > HEIGHT) destroyed = true;
+            if (!exploding && !destroyed) {
+                posY += 2; // Move down
+                
+                if (moveRight) {
+                    posX += 2;
+                } else {
+                    posX -= 2;
+                }
+                
+                if (posX <= 0 || posX >= WIDTH - size) {
+                    moveRight = !moveRight;
+                    posY += size;
+                }
+            }
         }
         public void hit() {
             hitpoints--;
@@ -528,31 +542,32 @@ public class LevelThree extends Application {
         }
     }
     
-    
-    private static final int TRIANGLE_ROWS = 5;
+    private boolean moveRight = true; 
+    private static final int TRIANGLE_ROWS = 4;
     private static final int ENEMY_SIZE = 50;
     private static final int ENEMY_GAP = 5;
     private int startX = 100;
 
     private void createTriangleFormation() {
-    	if(score < 150 || score >= 160) {
-	        int currentY = -210;
-	
-	        int startX = RAND.nextInt(WIDTH - (TRIANGLE_ROWS * (ENEMY_SIZE + ENEMY_GAP)));
-	        
-	        for (int row = 0; row < TRIANGLE_ROWS; row++) {
-	            int enemiesInRow = TRIANGLE_ROWS - row;
-	           
-	            startX += (row == 0) ? 0 : (ENEMY_SIZE + ENEMY_GAP) / 2;
-	            for (int i = 0; i < enemiesInRow; i++) {
-	                int posX = startX + i * (ENEMY_SIZE + ENEMY_GAP);
-	                bombs.add(new Bomb(posX, currentY, ENEMY_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]));
-	            }
-	        
-	            currentY += ENEMY_SIZE + ENEMY_GAP;
-	        }
-    	}
-    }
+        if (score < 150 || score >= 160) {
+            int currentY = -210;
+            
+            int startX = RAND.nextInt(WIDTH - (TRIANGLE_ROWS * (ENEMY_SIZE + ENEMY_GAP)));
+            
+            for (int row = 0; row < TRIANGLE_ROWS; row++) {
+                int enemiesInRow = TRIANGLE_ROWS - row;
+                
+                startX += (row == 0) ? 0 : (ENEMY_SIZE + ENEMY_GAP) / 2;
+                boolean moveRight = row % 2 == 0; // Alternate initial movement direction
+                for (int i = 0; i < enemiesInRow; i++) {
+                    int posX = startX + i * (ENEMY_SIZE + ENEMY_GAP);
+                    bombs.add(new Bomb(posX, currentY, ENEMY_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]));
+                }
+                
+                currentY += ENEMY_SIZE + ENEMY_GAP;
+            }
+        }
+    }    
     
     //boss formation
     private void createBossFormation() {
