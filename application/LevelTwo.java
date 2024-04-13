@@ -34,7 +34,7 @@ import java.util.stream.IntStream;
 import application.SpaceShooter.Bomb;
 import application.SpaceShooter.Shot;
 
-public class LevelOne extends Application {
+public class LevelTwo extends Application {
 
     private static final Random RAND = new Random();
     private static final int WIDTH = 800;
@@ -529,9 +529,9 @@ public class LevelOne extends Application {
     }
     
     
-    private static final int TRIANGLE_ROWS = 3;
+    private static final int TRIANGLE_ROWS = 4;
     private static final int ENEMY_SIZE = 50;
-    private static final int ENEMY_GAP = 30;
+    private static final int ENEMY_GAP = 20;
     private int startX = 100;
 
     private void createTriangleFormation() {
@@ -573,5 +573,7 @@ public class LevelOne extends Application {
         currentY += 410; // Move to the next row
         bossH.add(new BossH(posX + 10, currentY, 480, BOSS_H_IMG));
             
-        }  
+        }
+        
+   
 }

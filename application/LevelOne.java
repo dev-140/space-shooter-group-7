@@ -573,5 +573,7 @@ public class LevelOne extends Application {
         currentY += 410; // Move to the next row
         bossH.add(new BossH(posX + 10, currentY, 480, BOSS_H_IMG));
             
-        }  
+        }
+        
+   
 }
