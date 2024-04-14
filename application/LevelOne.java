@@ -23,7 +23,7 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
 import javafx.scene.layout.VBox;
-
+	
 import javafx.application.Platform;
 
 import java.util.ArrayList;
@@ -41,7 +41,6 @@ public class LevelOne extends Application {
     private static final int HEIGHT = 600;
     private static final int PLAYER_SIZE = 60;
     private static final int MAX_BOMBS = 10;
-    private static final int MAX_SHOTS = MAX_BOMBS * 2;
     private static final int EXPLOSION_W = 128;
     private static final int EXPLOSION_ROWS = 3;
     private static final int EXPLOSION_COL = 3;
@@ -63,6 +62,8 @@ public class LevelOne extends Application {
     private double mouseX;
     private int score;
     private int MAX_HITPOINTS = 1; // Changes L
+    private int MAX_SHOTS = 15;
+    private int DMG = 1; // Changes L
     private boolean gameOver = false;
     private boolean powerUpAvailable = false;
     private boolean powerUpChosen = false;
@@ -312,7 +313,7 @@ public class LevelOne extends Application {
             dialog.setHeaderText("Select a power-up:");
 
             // Create buttons for different power-up options
-            ButtonType biggerBulletButton = new ButtonType("Bigger Bullet");
+            ButtonType biggerBulletButton = new ButtonType("Stronger Bullet");
             ButtonType fasterBulletButton = new ButtonType("Faster Bullet");
 
             // Add buttons to the dialog
@@ -329,10 +330,11 @@ public class LevelOne extends Application {
                 if (buttonType == biggerBulletButton) {
                     // Apply the chosen power-up effect for bigger bullet
                     Shot.size *= 1.5;
-                    MAX_HITPOINTS--; // Changes L
+                    DMG++; // Changes L
                 } else if (buttonType == fasterBulletButton) {
                     // Apply the chosen power-up effect for faster bullet
                     Shot.speed *= 2;
+                    MAX_SHOTS += 5;
                 }
              // Reset the flag after applying the power-up effect:
                 showPowerUpSelection = false;
@@ -407,7 +409,7 @@ public class LevelOne extends Application {
             if (posY > HEIGHT) destroyed = true;
         }
         public void hit() {
-            hitpoints--;
+            hitpoints -= DMG;
             if (hitpoints <= 0  ) {
                 explode();
                 score++;
@@ -421,7 +423,7 @@ public class LevelOne extends Application {
 
         public BossH(int posX, int posY, int size, Image image) {
             super(posX, posY, size, image);
-            hitpoints = 70 + (10*MAX_HITPOINTS);
+            hitpoints = 200 + (10*MAX_HITPOINTS);
             
         }
 
@@ -430,7 +432,7 @@ public class LevelOne extends Application {
             if (!exploding && !destroyed) posY += SPEED;
         }
         public void hit() {
-            hitpoints--;
+        	hitpoints -= DMG;
             if (hitpoints <= 0) {
                 explode();
                 score += 100;
@@ -444,7 +446,7 @@ public class LevelOne extends Application {
 
         public Boss(int posX, int posY, int size, Image image) {
             super(posX, posY, size, image);
-            hitpoints = 70;
+            hitpoints = 180 + (10*MAX_HITPOINTS);
         }
 
         public void update() {
@@ -452,7 +454,7 @@ public class LevelOne extends Application {
             if (!exploding && !destroyed) posY += SPEED;
         }
         public void hit() {
-            hitpoints--;
+        	hitpoints -= DMG;
             if (hitpoints <= 0) {
                 explode();
                 score+= 50;
@@ -534,23 +536,28 @@ public class LevelOne extends Application {
     private static final int ENEMY_GAP = 30;
     private int startX = 100;
 
+    // Method to create triangle formation of enemies
     private void createTriangleFormation() {
     	if(score < 150 || score >= 160) {
-	        int currentY = -210;
-	
-	        int startX = RAND.nextInt(WIDTH - (TRIANGLE_ROWS * (ENEMY_SIZE + ENEMY_GAP)));
-	        
-	        for (int row = 0; row < TRIANGLE_ROWS; row++) {
-	            int enemiesInRow = TRIANGLE_ROWS - row;
-	           
-	            startX += (row == 0) ? 0 : (ENEMY_SIZE + ENEMY_GAP) / 2;
-	            for (int i = 0; i < enemiesInRow; i++) {
-	                int posX = startX + i * (ENEMY_SIZE + ENEMY_GAP);
-	                bombs.add(new Bomb(posX, currentY, ENEMY_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]));
-	            }
-	        
-	            currentY += ENEMY_SIZE + ENEMY_GAP;
-	        }
+        int currentY = -210; // Starting Y position of the triangle formation
+
+        // Calculate a random starting X position within the visible area of the screen
+        int startX = RAND.nextInt(WIDTH - (TRIANGLE_ROWS * (ENEMY_SIZE + ENEMY_GAP)));
+        
+        for (int row = 0; row < TRIANGLE_ROWS; row++) {
+            int enemiesInRow = TRIANGLE_ROWS - row; // Number of enemies in the current row
+           
+            // Calculate starting X position for the current row to center it
+            startX += (row == 0) ? 0 : (ENEMY_SIZE + ENEMY_GAP) / 2; // Offset for subsequent rows
+            for (int i = 0; i < enemiesInRow; i++) {
+                int posX = startX + i * (ENEMY_SIZE + ENEMY_GAP);
+                bombs.add(new Bomb(posX, currentY, ENEMY_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]));
+            }
+        
+
+            // Move to the next row
+            currentY += ENEMY_SIZE + ENEMY_GAP;
+        }
     	}
     }
     
@@ -565,7 +572,7 @@ public class LevelOne extends Application {
        
         for (int row = 0; row < 12; row++) {
             int enemiesInRow = 1; // Number of enemies in the current row
-            currentY += 410;
+            currentY += 400;
             boss.add(new Boss(posX, currentY, 500, BOSS_IMG));
         }
 
