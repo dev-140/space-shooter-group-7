@@ -10,4 +10,4 @@ By group 7
 -   Santos Leigh
 -   Serrato David
 
-![space](https://s6.imgcdn.dev/WuB3T.png)
+![space](https://i.ibb.co/wzFhv5h/shellsort-img.png)
