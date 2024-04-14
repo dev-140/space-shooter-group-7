@@ -1,3 +1,5 @@
+![space](https://i.ibb.co/wzFhv5h/shellsort-img.png)
+
 # Space-Shooter
 
 By group 7
@@ -10,4 +12,4 @@ By group 7
 -   Santos Leigh
 -   Serrato David
 
-![space](https://i.ibb.co/wzFhv5h/shellsort-img.png)
+
