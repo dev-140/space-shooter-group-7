@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.MainMenuController">
+   <children>
+      <ImageView fitHeight="600.0" fitWidth="800.0" pickOnBounds="true" preserveRatio="true">
+         <image>
+            <Image url="@../../Images/background.png" />
+         </image>
+      </ImageView>
+      <ImageView fitHeight="600.0" fitWidth="800.0" pickOnBounds="true" preserveRatio="true">
+         <image>
+            <Image url="@../../Images/main%20menu%20texts.png" />
+         </image>
+      </ImageView>
+      <Button fx:id="startGame_button" layoutX="347.0" layoutY="383.0" mnemonicParsing="false" onAction="#onStartGameClicked" styleClass="buttons" stylesheets="@main.css" text="START GAME" textFill="WHITE">
+         <font>
+            <Font name="Consolas" size="18.0" />
+         </font>
+      </Button>
+      <Button fx:id="exit_button" layoutX="377.0" layoutY="421.0" mnemonicParsing="false" onAction="#onExitClicked" styleClass="buttons" stylesheets="@main.css" text="EXIT" textFill="WHITE">
+         <font>
+            <Font name="Consolas" size="18.0" />
+         </font>
+      </Button>
+   </children>
+</AnchorPane>
