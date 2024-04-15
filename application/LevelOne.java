@@ -65,6 +65,7 @@ public class LevelOne extends Application {
     private int MAX_SHOTS = 15;
     private int DMG = 1; // Changes L
     private boolean gameOver = false;
+    private boolean gameFinished = false;
     private boolean powerUpAvailable = false;
     private boolean powerUpChosen = false;
     private Timeline timeline;
@@ -95,10 +96,20 @@ public class LevelOne extends Application {
                 gameOver = false;
                 setup();
             }
+            if (gameFinished) {
+                gameFinished = false;
+                LevelTwo leveltwo = new LevelTwo();
+                try {
+					leveltwo.start(stage);
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+            }
         });
         setup();
         stage.setScene(new Scene(new StackPane(canvas)));
-        stage.setTitle("Space Invaders");
+        stage.setTitle("The Void");
         stage.show();
     }
 
@@ -161,7 +172,7 @@ public class LevelOne extends Application {
             gc.setFont(font);
             gc.setFill(Color.RED);
             gc.setTextAlign(TextAlignment.CENTER);
-            gc.fillText("Oroboros, the Endless Devourer", WIDTH / 2, 35);
+            gc.fillText("Oroboros, the All Devouring", WIDTH / 2, 35);
         }
         
         
@@ -171,12 +182,22 @@ public class LevelOne extends Application {
             timeline.stop();
             
             // Display "LEVEL CLEARED" screen
+            Font font = Font.font("Palatino Linotype", 35);
             gc.setFill(Color.BLACK);
             gc.fillRect(0, 0, WIDTH, HEIGHT);
-            gc.setFont(Font.font(35));
-            gc.setFill(Color.WHITE);
+            gc.setFont(font);
+            gc.setFill(Color.web("#FFFF6E"));
             gc.setTextAlign(TextAlignment.CENTER);
-            gc.fillText("OROBOROS SLAIN\nYour Score is: " + score + "\nnext level still work in progress", WIDTH / 2, HEIGHT / 2.5);
+            gc.fillText(" GUARDIAN SLAIN ", WIDTH / 2, HEIGHT / 2.5);
+            Font font1 = Font.font("Palatino Linotype", 15);
+            gc.setFill(Color.BLACK);
+            gc.fillRect(0, 0, WIDTH, 0);
+            gc.setFont(font1);
+            gc.setFill(Color.web("#FFFF6E"));
+            gc.setTextAlign(TextAlignment.CENTER);
+            gc.fillText("\n\n\nYou feel the anger of the Gods quake the universe", WIDTH / 2, HEIGHT / 2.5);
+            
+            gameFinished = true;
         }
 
         
