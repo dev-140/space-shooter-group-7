@@ -23,7 +23,7 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
 import javafx.scene.layout.VBox;
-	
+
 import javafx.application.Platform;
 
 import java.util.ArrayList;
@@ -31,16 +31,17 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import application.SpaceShooter.Bomb;
-import application.SpaceShooter.Shot;
+import application.LevelThree.Asteroid;
+import application.LevelThree.Rocket;
 
 public class LevelOne extends Application {
 
     private static final Random RAND = new Random();
-    private static final int WIDTH = 800;
-    private static final int HEIGHT = 600;
+    private static final int WIDTH = 1380;
+    private static final int HEIGHT = 680;
     private static final int PLAYER_SIZE = 60;
     private static final int MAX_BOMBS = 10;
+    private static final int MAX_SHOTS = MAX_BOMBS * 2;
     private static final int EXPLOSION_W = 128;
     private static final int EXPLOSION_ROWS = 3;
     private static final int EXPLOSION_COL = 3;
@@ -57,15 +58,16 @@ public class LevelOne extends Application {
     private List<Bomb> bombs;
     private List<BossH> bossH;
     private List<Boss> boss;
+    ArrayList<Rocket> players = new ArrayList<>();
+    
+  
+    
 
     private boolean showPowerUpSelection = false; // Combined flag
     private double mouseX;
     private int score;
     private int MAX_HITPOINTS = 1; // Changes L
-    private int MAX_SHOTS = 15;
-    private int DMG = 1; // Changes L
     private boolean gameOver = false;
-    private boolean gameFinished = false;
     private boolean powerUpAvailable = false;
     private boolean powerUpChosen = false;
     private Timeline timeline;
@@ -96,20 +98,10 @@ public class LevelOne extends Application {
                 gameOver = false;
                 setup();
             }
-            if (gameFinished) {
-                gameFinished = false;
-                LevelTwo leveltwo = new LevelTwo();
-                try {
-					leveltwo.start(stage);
-				} catch (Exception e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-            }
         });
         setup();
         stage.setScene(new Scene(new StackPane(canvas)));
-        stage.setTitle("The Void");
+        stage.setTitle("Space Invaders");
         stage.show();
     }
 
@@ -122,6 +114,9 @@ public class LevelOne extends Application {
         bombs = new ArrayList<>();
         boss = new ArrayList<>();
         bossH = new ArrayList<>();
+        asteroid = new ArrayList<>();
+        blackholes = new ArrayList<>();
+      
         player = new Rocket(WIDTH / 2, HEIGHT - PLAYER_SIZE, PLAYER_SIZE, PLAYER_IMG);
         score = 0;
 //        IntStream.range(0, MAX_BOMBS).mapToObj(i -> this.newBomb()).forEach(Bombs::add); 
@@ -129,7 +124,22 @@ public class LevelOne extends Application {
         triangleSpawnTimeline.setCycleCount(Timeline.INDEFINITE);
         triangleSpawnTimeline.play();
         createTriangleFormation();        
+        
     }
+    private List<Asteroid> asteroid;
+    public class Asteroid extends Rocket {
+        int SPEED = 5;
+    
+        public Asteroid(int posX, int posY, int size, Image image) {
+            super(posX, posY, size, image);
+        }
+    
+        public void update() {
+            super.update();
+            if (!exploding && !destroyed) posY += SPEED;
+        }
+    }
+    
     
     
 
@@ -143,6 +153,8 @@ public class LevelOne extends Application {
 
         // Debug print
         System.out.println("Current score: " + score);
+        
+    
 
         // Check if power-up is available and handle power-up selection
         if (score > 0 && score % 35 == 0 && !showPowerUpSelection && score < 152) {
@@ -154,6 +166,44 @@ public class LevelOne extends Application {
             score++;
 
         }
+        if (RAND.nextInt(100) < 3) {
+        	int X;
+        	X = 50 + RAND.nextInt(WIDTH - 100);
+            Asteroid newAsteroid = new Asteroid(X, 0, PLAYER_SIZE, new Image("file:images/blackhole.jpg"));
+            asteroid.add(newAsteroid);
+        }
+        
+        asteroid.forEach(asteroid -> {
+            asteroid.update();
+            asteroid.draw();
+
+            if (player.collide(asteroid) && !player.exploding) {
+                player.explode();
+            }
+         // Calculate distance between player and asteroid
+            double distance = Math.sqrt(Math.pow(player.posX - asteroid.posX, 2) + Math.pow(player.posY - asteroid.posY, 2));
+
+            // Define the range where gravitational pull starts affecting the player
+            double gravitationalRange = 300; // Adjust this value as needed
+
+            if(distance < gravitationalRange) {
+            	 {
+                // Calculate gravitational force direction
+                double dx = asteroid.posX - player.posX;
+                double dy = asteroid.posY - player.posY;
+                double angle = Math.atan2(dy, dx);
+
+                // Apply gravitational force to player
+               
+                int offsetX = (asteroid.posX - (player.posX))/2;
+//                int soffsetX = (asteroid.posX - (shots.posX))/10;
+
+                // Update player's velocity based on gravitational force
+                player.posX += offsetX;
+//                shots.posX += soffsetX;
+            	}
+            }
+        });
         
         
         //all boss defeated and boss spawn
@@ -172,7 +222,7 @@ public class LevelOne extends Application {
             gc.setFont(font);
             gc.setFill(Color.RED);
             gc.setTextAlign(TextAlignment.CENTER);
-            gc.fillText("Oroboros, the All Devouring", WIDTH / 2, 35);
+            gc.fillText("Oroboros, the Endless Devourer", WIDTH / 2, 35);
         }
         
         
@@ -182,22 +232,12 @@ public class LevelOne extends Application {
             timeline.stop();
             
             // Display "LEVEL CLEARED" screen
-            Font font = Font.font("Palatino Linotype", 35);
             gc.setFill(Color.BLACK);
             gc.fillRect(0, 0, WIDTH, HEIGHT);
-            gc.setFont(font);
-            gc.setFill(Color.web("#FFFF6E"));
+            gc.setFont(Font.font(35));
+            gc.setFill(Color.WHITE);
             gc.setTextAlign(TextAlignment.CENTER);
-            gc.fillText(" GUARDIAN SLAIN ", WIDTH / 2, HEIGHT / 2.5);
-            Font font1 = Font.font("Palatino Linotype", 15);
-            gc.setFill(Color.BLACK);
-            gc.fillRect(0, 0, WIDTH, 0);
-            gc.setFont(font1);
-            gc.setFill(Color.web("#FFFF6E"));
-            gc.setTextAlign(TextAlignment.CENTER);
-            gc.fillText("\n\n\nYou feel the anger of the Gods quake the universe", WIDTH / 2, HEIGHT / 2.5);
-            
-            gameFinished = true;
+            gc.fillText("OROBOROS SLAIN\nYour Score is: " + score + "\nnext level still work in progress", WIDTH / 2, HEIGHT / 2.5);
         }
 
         
@@ -285,6 +325,13 @@ public class LevelOne extends Application {
                     shot.toRemove = true;
                 }
             }
+            
+            
+        }
+        
+        for (Blackhole bh : blackholes) {
+            bh.applyGravity(bombs); // Apply gravity to bombs
+//            bh.applyGravity(asteroid); // Apply gravity to asteroids
         }
         
      
@@ -334,7 +381,7 @@ public class LevelOne extends Application {
             dialog.setHeaderText("Select a power-up:");
 
             // Create buttons for different power-up options
-            ButtonType biggerBulletButton = new ButtonType("Stronger Bullet");
+            ButtonType biggerBulletButton = new ButtonType("Bigger Bullet");
             ButtonType fasterBulletButton = new ButtonType("Faster Bullet");
 
             // Add buttons to the dialog
@@ -351,11 +398,10 @@ public class LevelOne extends Application {
                 if (buttonType == biggerBulletButton) {
                     // Apply the chosen power-up effect for bigger bullet
                     Shot.size *= 1.5;
-                    DMG++; // Changes L
+                    MAX_HITPOINTS--; // Changes L
                 } else if (buttonType == fasterBulletButton) {
                     // Apply the chosen power-up effect for faster bullet
                     Shot.speed *= 2;
-                    MAX_SHOTS += 5;
                 }
              // Reset the flag after applying the power-up effect:
                 showPowerUpSelection = false;
@@ -430,7 +476,7 @@ public class LevelOne extends Application {
             if (posY > HEIGHT) destroyed = true;
         }
         public void hit() {
-            hitpoints -= DMG;
+            hitpoints--;
             if (hitpoints <= 0  ) {
                 explode();
                 score++;
@@ -444,7 +490,7 @@ public class LevelOne extends Application {
 
         public BossH(int posX, int posY, int size, Image image) {
             super(posX, posY, size, image);
-            hitpoints = 200 + (10*MAX_HITPOINTS);
+            hitpoints = 70 + (10*MAX_HITPOINTS);
             
         }
 
@@ -453,7 +499,7 @@ public class LevelOne extends Application {
             if (!exploding && !destroyed) posY += SPEED;
         }
         public void hit() {
-        	hitpoints -= DMG;
+            hitpoints--;
             if (hitpoints <= 0) {
                 explode();
                 score += 100;
@@ -467,7 +513,7 @@ public class LevelOne extends Application {
 
         public Boss(int posX, int posY, int size, Image image) {
             super(posX, posY, size, image);
-            hitpoints = 180 + (10*MAX_HITPOINTS);
+            hitpoints = 70;
         }
 
         public void update() {
@@ -475,7 +521,7 @@ public class LevelOne extends Application {
             if (!exploding && !destroyed) posY += SPEED;
         }
         public void hit() {
-        	hitpoints -= DMG;
+            hitpoints--;
             if (hitpoints <= 0) {
                 explode();
                 score+= 50;
@@ -504,7 +550,7 @@ public class LevelOne extends Application {
         public Shot(int posX, int posY) {
             this.posX = posX;
             this.posY = posY;
-            bulletImage = new Image("file:images/bullets.png");
+            bulletImage = new Image("file:images/bullet.png");
         }
 
         public void update() {
@@ -557,28 +603,23 @@ public class LevelOne extends Application {
     private static final int ENEMY_GAP = 30;
     private int startX = 100;
 
-    // Method to create triangle formation of enemies
     private void createTriangleFormation() {
     	if(score < 150 || score >= 160) {
-        int currentY = -210; // Starting Y position of the triangle formation
-
-        // Calculate a random starting X position within the visible area of the screen
-        int startX = RAND.nextInt(WIDTH - (TRIANGLE_ROWS * (ENEMY_SIZE + ENEMY_GAP)));
-        
-        for (int row = 0; row < TRIANGLE_ROWS; row++) {
-            int enemiesInRow = TRIANGLE_ROWS - row; // Number of enemies in the current row
-           
-            // Calculate starting X position for the current row to center it
-            startX += (row == 0) ? 0 : (ENEMY_SIZE + ENEMY_GAP) / 2; // Offset for subsequent rows
-            for (int i = 0; i < enemiesInRow; i++) {
-                int posX = startX + i * (ENEMY_SIZE + ENEMY_GAP);
-                bombs.add(new Bomb(posX, currentY, ENEMY_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]));
-            }
-        
-
-            // Move to the next row
-            currentY += ENEMY_SIZE + ENEMY_GAP;
-        }
+	        int currentY = -210;
+	
+	        int startX = RAND.nextInt(WIDTH - (TRIANGLE_ROWS * (ENEMY_SIZE + ENEMY_GAP)));
+	        
+	        for (int row = 0; row < TRIANGLE_ROWS; row++) {
+	            int enemiesInRow = TRIANGLE_ROWS - row;
+	           
+	            startX += (row == 0) ? 0 : (ENEMY_SIZE + ENEMY_GAP) / 2;
+	            for (int i = 0; i < enemiesInRow; i++) {
+	                int posX = startX + i * (ENEMY_SIZE + ENEMY_GAP);
+	                bombs.add(new Bomb(posX, currentY, ENEMY_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]));
+	            }
+	        
+	            currentY += ENEMY_SIZE + ENEMY_GAP;
+	        }
     	}
     }
     
@@ -593,7 +634,7 @@ public class LevelOne extends Application {
        
         for (int row = 0; row < 12; row++) {
             int enemiesInRow = 1; // Number of enemies in the current row
-            currentY += 400;
+            currentY += 410;
             boss.add(new Boss(posX, currentY, 500, BOSS_IMG));
         }
 
@@ -602,6 +643,37 @@ public class LevelOne extends Application {
         bossH.add(new BossH(posX + 10, currentY, 480, BOSS_H_IMG));
             
         }
+    //Blackhole
+    private List<Blackhole> blackholes;
+    
+    public class Blackhole extends Rocket {
+        private static final double GRAVITATIONAL_CONSTANT = 0.1;
         
-   
+        
+        // Adjust as needed
+        
+        public Blackhole(int posX, int posY, int size) {
+            super(posX, posY, size, new Image("file:images/blackhole.jpg"));
+
+        }	
+        
+        
+       
+        public void applyGravity(List<Bomb> bombs) {
+            for (Rocket obj : bombs) {
+                double distance = Math.sqrt(Math.pow((this.posX - obj.posX), 2) + Math.pow((this.posY - obj.posY), 2));
+                if (distance > 0) { // Avoid division by zero
+                    double force = GRAVITATIONAL_CONSTANT / Math.pow(distance, 2);
+                    double angle = Math.atan2(obj.posY - this.posY, obj.posX - this.posX);
+                    obj.posX += force * Math.cos(angle);
+                    obj.posY += force * Math.sin(angle);
+                }
+            }
+            
+                     
+        }              
+    }
 }
+    
+    
+
