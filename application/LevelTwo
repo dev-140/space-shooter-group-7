@@ -1,0 +1,665 @@
+package application;
+
+import javafx.application.Application;
+import javafx.scene.Cursor;
+import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
+import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.TextAlignment;
+import javafx.stage.Stage;
+import javafx.util.Duration;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+
+//FOR OPTION
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
+import javafx.scene.layout.VBox;
+	
+import javafx.application.Platform;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.IntStream;
+
+import application.SpaceShooter.Bomb;
+import application.SpaceShooter.Shot;
+
+public class LevelTwo extends Application {
+
+    private static final Random RAND = new Random();
+    private static final int WIDTH = 1280;
+    private static final int HEIGHT = 680;
+    private static final int PLAYER_SIZE = 60;
+    private static final int MAX_BOMBS = 10;
+    private static final int EXPLOSION_W = 128;
+    private static final int EXPLOSION_ROWS = 3;
+    private static final int EXPLOSION_COL = 3;
+    private static final int EXPLOSION_H = 128;
+    private static final int EXPLOSION_STEPS = 15;
+    
+    
+    
+
+    private static GraphicsContext gc;
+    private Rocket player;
+    private List<Shot> shots;
+    private List<Universe> universes;
+    private List<Bomb> bombs;
+    private List<Boss> boss;
+    private List<Wheel> wheel;
+
+    private boolean showPowerUpSelection = false; // Combined flag
+    private double mouseX;
+    private int score;
+    private int MAX_HITPOINTS = 1; // Changes L
+    private int MAX_SHOTS = 15;
+    private int DMG = 1; // Changes L
+    private boolean gameOver = false;
+    private boolean powerUpAvailable = false;
+    private boolean powerUpChosen = false;
+    private Timeline timeline;
+    
+    static final Image BACKGROUND_GIF = new Image("file:images/bg.gif");
+    static final Image PLAYER_IMG = new Image("file:images/player.png");
+    static final Image EXPLOSION_IMG = new Image("file:images/explosion.png");
+    static final Image[] BOMBS_IMG = {
+        new Image("file:images/1.png"),
+        new Image("file:images/2.png")
+    };
+    
+    //Boss sprites
+    static final Image BOSS_IMG = new Image("file:images/Naia.gif");
+    static final Image PROPS_IMG = new Image("file:images/wheel.gif");
+
+    public void start(Stage stage) throws Exception {
+        Canvas canvas = new Canvas(WIDTH, HEIGHT);
+        gc = canvas.getGraphicsContext2D();
+        timeline = new Timeline(new KeyFrame(Duration.millis(100), e -> run(gc)));
+        timeline.setCycleCount(Timeline.INDEFINITE);
+        timeline.play();
+        canvas.setCursor(Cursor.MOVE);
+        canvas.setOnMouseMoved(e -> mouseX = e.getX());
+        canvas.setOnMouseClicked(e -> {
+            if (shots.size() < MAX_SHOTS) shots.add(player.shoot());
+            if (gameOver) {
+                gameOver = false;
+                setup();
+            }
+        });
+        setup();
+        stage.setScene(new Scene(new StackPane(canvas)));
+        stage.setTitle("Eternal Garden");
+        stage.show();
+    }
+
+    // Setup method
+    private static final Duration TRIANGLE_SPAWN_INTERVAL = Duration.seconds(7); // Spawn triangle every 3 seconds
+    private Timeline triangleSpawnTimeline;
+    private void setup() {
+        universes = new ArrayList<>();
+        shots = new ArrayList<>();
+        bombs = new ArrayList<>();
+        boss = new ArrayList<>();
+        wheel = new ArrayList<>();
+        player = new Rocket(WIDTH / 2, HEIGHT - PLAYER_SIZE, PLAYER_SIZE, PLAYER_IMG);
+        score = 150;
+//        IntStream.range(0, MAX_BOMBS).mapToObj(i -> this.newBomb()).forEach(Bombs::add); 
+        triangleSpawnTimeline = new Timeline(new KeyFrame(TRIANGLE_SPAWN_INTERVAL, e -> createTriangleFormation()));
+        triangleSpawnTimeline.setCycleCount(Timeline.INDEFINITE);
+        triangleSpawnTimeline.play();
+        createTriangleFormation();        
+    }
+    
+    
+
+    private void run(GraphicsContext gc) {
+    	gc.drawImage(BACKGROUND_GIF, 0, 0, WIDTH, HEIGHT);
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.setFont(Font.font(20));
+        gc.setFill(Color.WHITE);
+        gc.fillText("Score: " + score, 60, 20);
+
+        // Debug print
+        System.out.println("Current score: " + score);
+
+        // Check if power-up is available and handle power-up selection
+        if (score > 0 && score % 35 == 0 && !showPowerUpSelection && score < 152) {
+            showPowerUpSelection = true; // Set flag when score reaches a multiple of 20
+            // Pause the game
+            timeline.stop();
+            // Prompt the player to choose a power-up
+            showPowerUpOptions();
+            score++;
+
+        }
+        
+        
+        //all boss defeated and boss spawn
+
+
+        	
+        	
+
+        if(score >= 150 && score < 151) {
+        	createBossFormation();
+        	score++;
+        	
+        }
+        
+        
+        
+        
+        if (score > 850) {
+            // Stop the game
+            timeline.stop();
+            
+            // Display "LEVEL CLEARED" screen
+            Font font = Font.font("Palatino Linotype", 35);
+            gc.setFill(Color.BLACK);
+            gc.fillRect(0, 0, WIDTH, HEIGHT);
+            gc.setFont(font);
+            gc.setFill(Color.web("#FFFF6E"));
+            gc.setTextAlign(TextAlignment.CENTER);
+            gc.fillText(" GUARDIAN SLAIN ", WIDTH / 2, HEIGHT / 2.5);
+            Font font1 = Font.font("Palatino Linotype", 15);
+            gc.setFill(Color.BLACK);
+            gc.fillRect(0, 0, WIDTH, 0);
+            gc.setFont(font1);
+            gc.setFill(Color.web("#FFFF6E"));
+            gc.setTextAlign(TextAlignment.CENTER);
+            gc.fillText("\n\n\nTime begins to shatter", WIDTH / 2, HEIGHT / 2.5);
+        }
+
+        
+        // Resume the game if power-up selection is done
+        if (powerUpChosen) {
+            timeline.play();
+        }
+
+        //DRAW UNIVERSE
+        universes.forEach(Universe::draw);
+
+        // Increase hp of enemy for every 50 points , Max hp is 3 // Changes L
+        if (score < 150 && score % 50 == 0) {
+            // Increase the maximum hitpoints for bombs
+            MAX_HITPOINTS++;
+            score++;
+        }
+        
+        
+        // Update and draw player
+        player.update();
+        player.draw();
+        player.posX = (int) (mouseX - player.size / 2); // center the player
+
+        // Update and draw bombs
+        bombs.stream().peek(Rocket::update).peek(Rocket::draw).forEach(e -> {
+            if (player.collide(e) && !player.exploding) {
+                player.explode();
+            }
+        });
+        
+     
+        
+     // Update and draw boss
+        wheel.stream().peek(Rocket::update).peek(Rocket::draw).forEach(e -> {
+            if (player.collide(e) && !player.exploding) {
+            	player.explode();
+            }
+        });
+        
+        boss.stream().peek(Rocket::update).peek(Rocket::draw).forEach(e -> {
+            if (player.collide(e) && !player.exploding) {
+            	player.explode();	
+            }
+        });
+        
+        
+        //shooter enemy
+        
+        //Boss movements
+       
+        for (Boss boss : boss) {
+            // Calculate the offset between the player and the boss
+            if (boss.posY >= 0) {
+            boss.SPEED = 0;
+            }
+        }
+        for (Wheel wheel : wheel) {
+            // Calculate the offset between the player and the boss
+            if (wheel.posY >= -100) {
+            wheel.SPEED = 0;
+            }
+        }
+        // Update and draw shots // Changes L
+        for (int i = shots.size() - 1; i >= 0; i--) {
+            Shot shot = shots.get(i);
+            if (shot.posY < 0 || shot.toRemove) {
+                shots.remove(i);
+                continue;
+            }
+            shot.update();
+            shot.draw();
+            for (Bomb bomb : bombs) {
+                if (shot.collide(bomb) && !bomb.exploding) {
+                    bomb.hit(); // Decrease bomb's hitpoints
+                    shot.toRemove = true;
+                }
+            }
+            for (Boss boss : boss) {
+                if (shot.collide(boss) && !boss.exploding) {
+                    boss.hit(); // Decrease bomb's hitpoints
+                    shot.toRemove = true;
+                }
+            }
+            for (Wheel wheel : wheel) {
+                if (shot.collide(wheel) && !wheel.exploding) {
+                	shot.collidingWithWheel = true;   
+                }
+            }
+          
+        }
+        
+     
+
+//        for (int i = Bombs.size() - 1; i >= 0; i--) {
+//            if (Bombs.get(i).destroyed) {
+//                Bombs.set(i, newBomb());
+//            }
+//        }
+
+        // Check if the game is over
+        gameOver = player.destroyed;
+
+        if (gameOver) {
+            gc.setFont(Font.font(35));
+            gc.setFill(Color.YELLOW);
+            gc.fillText("Game Over\nYour Score is: " + score + "\nClick to play again", WIDTH / 2, HEIGHT / 2.5);
+        }
+        
+        // Add new universes
+        if (RAND.nextInt(10) > 2) {
+            universes.add(new Universe());
+        }
+
+        // Remove universes that have gone past the screen
+        universes.removeIf(universe -> universe.posY > HEIGHT);
+    }
+    private Bomb newBomb() {
+        return new Bomb(50 + RAND.nextInt(WIDTH - 100), 0, PLAYER_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]);
+    }
+    //boss 
+   
+    private Boss newBoss() {
+        return new Boss(50 + RAND.nextInt(WIDTH - 100), 0, PLAYER_SIZE, BOSS_IMG);
+    }
+
+    private static int distance(int x1, int y1, int x2, int y2) {
+        return (int) Math.sqrt(Math.pow((x1 - x2), 2) + Math.pow((y1 - y2), 2));
+    }
+
+    private void showPowerUpOptions() {
+        Platform.runLater(() -> {
+            Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.setTitle("Choose Power-Up");
+            dialog.setHeaderText("Select a power-up:");
+
+            // Create buttons for different power-up options
+            ButtonType biggerBulletButton = new ButtonType("Stronger Bullet");
+            ButtonType fasterBulletButton = new ButtonType("Faster Bullet");
+
+            // Add buttons to the dialog
+            dialog.getDialogPane().getButtonTypes().addAll(biggerBulletButton, fasterBulletButton);
+
+            // Handle button actions
+            dialog.setOnCloseRequest(event -> {
+                // If the dialog is closed without choosing a power-up, resume the game
+                timeline.play();
+            });
+
+            // Show the dialog and wait for the user to choose a power-up
+            dialog.showAndWait().ifPresent(buttonType -> {
+                if (buttonType == biggerBulletButton) {
+                    // Apply the chosen power-up effect for bigger bullet
+                    Shot.size *= 1.5;
+                    DMG++; // Changes L
+                } else if (buttonType == fasterBulletButton) {
+                    // Apply the chosen power-up effect for faster bullet
+                    Shot.speed *= 2;
+                    MAX_SHOTS += 5;
+                }
+             // Reset the flag after applying the power-up effect:
+                showPowerUpSelection = false;
+            });
+        });
+    }
+
+
+    public static void main(String[] args) {
+        launch();
+    }
+
+    public class Rocket {
+        int posX, posY, size;
+        boolean exploding, destroyed, entangled;
+        Image img;
+        int explosionStep = 0;
+
+        public Rocket(int posX, int posY, int size, Image image) {
+            this.posX = posX;
+            this.posY = posY;
+            this.size = size;
+            img = image;
+        }
+
+        public Shot shoot() {
+            // Adjust the starting position of the bullet by subtracting half of the bullet's size
+            int bulletX = posX + size / 2 - Shot.size / 2;
+            // Create a new Shot object
+            return new Shot(bulletX, posY - Shot.size);
+        }
+
+        public void update() {
+            if (exploding) explosionStep++;
+            destroyed = explosionStep > EXPLOSION_STEPS;
+            if (entangled) {
+                 // Slow down the player while colliding with time tower
+            } else {
+                // Speed up the bullet if it's not colliding with a wheel
+                // Reset the speed to its original value
+            }
+        }
+
+        public void draw() {
+            if (exploding) {
+                gc.drawImage(EXPLOSION_IMG, explosionStep % EXPLOSION_COL * EXPLOSION_W, (explosionStep / EXPLOSION_ROWS) * EXPLOSION_H + 1,
+                        EXPLOSION_W, EXPLOSION_H,
+                        posX, posY, size, size);
+            } else {
+                gc.drawImage(img, posX, posY, size, size);
+            }
+        }
+
+        public boolean collide(Rocket other) {
+            int d = distance(this.posX + size / 2, this.posY + size / 2,
+                    other.posX + other.size / 2, other.posY + other.size / 2);
+            return d < other.size / 2 + this.size / 2;
+        }
+
+        public void explode() {
+            exploding = true;
+            explosionStep = -1;
+        }
+    }
+    
+    public class Bomb extends Rocket {
+    	int hitpoints;
+        int SPEED = (score / 10) + 1;
+
+        public Bomb(int posX, int posY, int size, Image image) {
+            super(posX, posY, size, image);
+            hitpoints = MAX_HITPOINTS;
+        }	
+
+        public void update() {
+            super.update();
+            if (!exploding && !destroyed) posY += SPEED;
+            if (posY > HEIGHT) destroyed = true;
+        }
+        public void hit() {
+            hitpoints -= DMG;
+            if (hitpoints <= 0  ) {
+                explode();
+                score++;
+            }
+        }
+    }
+    
+    //UPDATE MARKER
+    public class Boss extends Rocket {
+    	int hitpoints, maxHitpoints;
+        int SPEED = 50;
+        private Timeline shootingTimeline;
+        private int bulletCount;
+        private Timeline shootingIntervalTimeline;
+        private boolean isShooting;
+
+        public Boss(int posX, int posY, int size, Image image) {
+            super(posX, posY, size, image);
+            hitpoints = 2000 + (10*MAX_HITPOINTS);
+            maxHitpoints = 2000 + (10*MAX_HITPOINTS);
+            isShooting = false;
+            shootingTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> shootBullet()));
+            shootingTimeline.setCycleCount(8); // Shoot 8 bullets
+            shootingIntervalTimeline = new Timeline(new KeyFrame(Duration.seconds(6), e -> startShootingAnimation()));
+            shootingIntervalTimeline.setCycleCount(Timeline.INDEFINITE); // Repeat indefinitely
+            shootingIntervalTimeline.play(); // Start the shooting interval immediately
+        }
+        
+        private void startShootingAnimation() {
+            // Add animation effects here before starting shooting
+            // For example, you can change the boss image to a shooting animation
+            // or play a sound effect
+            
+            // Set isShooting flag to true to indicate that shooting animation has started
+            isShooting = true;
+
+            // Start shooting after animation duration
+            Duration animationDuration = Duration.seconds(2); // Example duration for animation
+            Timeline delayTimeline = new Timeline(new KeyFrame(animationDuration, e -> startShooting()));
+            delayTimeline.play();
+        }
+        
+        public void startShooting() {
+            if (isShooting) {
+                // Reset isShooting flag
+                isShooting = false;
+
+                // Start shooting bullets
+                shootingTimeline.play();
+            }
+        }
+        
+        private void shootBullet() {
+            // Calculate the position for the next bullet
+            int bulletX = posX + (bulletCount * 20); // Adjust the spacing between bullets as needed
+            int bulletY = posY + size; // Position the bullet below the boss
+
+            // Create and add the bullet to the shots list
+            shots.add(new Shot(bulletX, bulletY));
+
+            bulletCount++;
+        }
+        
+        
+        public void drawHealthBar() {
+            double healthBarWidth = (double) hitpoints / maxHitpoints * size; // Calculate width based on current and maximum hitpoints
+            double healthBarHeight = 10; // Height of the health bar
+            double healthBarX = posX; // X-coordinate of the health bar
+            double healthBarY = posY + 50; // Y-coordinate of the health bar, positioned above the boss
+            
+            Font font = Font.font("Palatino Linotype", 25);
+            gc.setFont(font);
+            gc.setFill(Color.web("#FFFF6E"));
+            gc.setTextAlign(TextAlignment.CENTER);
+            gc.fillText("Naia, the Time Keeper", healthBarX + size/2, healthBarY -20);
+            // Draw the background of the health bar (gray)
+            gc.setFill(Color.GRAY);
+            gc.fillRect(healthBarX, healthBarY, size, healthBarHeight);
+            // Draw the current health level (green)
+            gc.setFill(Color.RED);
+            gc.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+        }
+
+        // Override the draw method to include drawing of the health bar
+        @Override
+        public void draw() {
+            super.draw(); // Draw the boss sprite
+            drawHealthBar(); // Draw the boss health bar
+        }
+        
+
+        public void update() {
+            super.update();
+            if (!exploding && !destroyed) posY += SPEED;
+        }
+        public void hit() {
+        	hitpoints -= DMG;
+            if (hitpoints <= 0) {
+                explode();
+                
+                score+= 750;
+            }
+        }
+        public void collapse() {
+            hitpoints -= 30;
+            if (hitpoints <= 0) {
+                explode();
+                score+= 750;
+            }
+        }
+    }
+    public class Wheel extends Rocket {
+    	int hitpoints;
+        int SPEED = 30;
+
+        public Wheel(int posX, int posY, int size, Image image) {
+            super(posX, posY, size, image);
+            hitpoints = 1;
+        }
+        public void draw() {
+            // Set the desired opacity value
+            double opacity = 0.8; // Example value (0.0 for fully transparent, 1.0 for fully opaque)
+
+            // Draw the image with the specified opacity
+            gc.setGlobalAlpha(opacity);
+            super.draw(); // Draw the image using the superclass method
+            gc.setGlobalAlpha(1.0); // Reset the opacity to default after drawing
+        }
+
+        public void update() {
+            super.update();
+            if (!exploding && !destroyed) posY += SPEED;
+        }
+        public void hit() {
+        	hitpoints -= DMG;
+            if (hitpoints <= 0) {
+                explode();
+                score+= 50;
+            }
+        }
+    }
+    
+
+    // Shot class
+    public static class Shot {
+
+        public boolean toRemove;
+        int posX, posY;
+        public boolean collidingWithWheel;
+        static int size = 6;
+        static int speed = 10; // Add speed variable
+
+        private Image bulletImage;
+
+        public Shot(int posX, int posY) {
+            this.posX = posX;
+            this.posY = posY;
+            bulletImage = new Image("file:images/bullets.png");
+        }
+
+        public void update() {
+            posY -= speed; // Update the position based on speed
+            
+            // Check if the bullet is colliding with a wheel
+            if (collidingWithWheel) {
+                speed *= 0.8; // Slow down the bullet while colliding
+            } else {
+                // Speed up the bullet if it's not colliding with a wheel
+                speed = 10; // Reset the speed to its original value
+            }
+        }
+
+        public void draw() {
+            if (bulletImage != null) {
+                gc.drawImage(bulletImage, posX, posY, size * 0.2, size * 5);
+            }
+        }
+
+        public boolean collide(Rocket rocket) {
+            int distance = distance(this.posX + size / 2, this.posY + size / 2,
+                    rocket.posX + rocket.size / 2, rocket.posY + rocket.size / 2);
+            return distance < rocket.size / 2 + size / 2;
+        }
+    }
+
+    public class Universe {
+        int posX, posY;
+        private int h, w, r, g, b;
+        private double opacity;
+
+        public Universe() {
+            posX = RAND.nextInt(WIDTH);
+            posY = 0;
+
+        }
+
+        public void draw() {
+            gc.setFill(Color.rgb(r, g, b, opacity));
+            gc.fillOval(posX, posY, w, h);
+            posY += 20;
+        }
+    }
+    
+    
+    private static final int TRIANGLE_ROWS = 3;
+    private static final int ENEMY_SIZE = 50;
+    private static final int ENEMY_GAP = 30;
+    private int startX = 100;
+
+    // Method to create triangle formation of enemies
+    private void createTriangleFormation() {
+    	if(score < 150 || score >= 160) {
+        int currentY = -210; // Starting Y position of the triangle formation
+
+        // Calculate a random starting X position within the visible area of the screen
+        int startX = RAND.nextInt(WIDTH - (TRIANGLE_ROWS * (ENEMY_SIZE + ENEMY_GAP)));
+        
+        for (int row = 0; row < TRIANGLE_ROWS; row++) {
+            int enemiesInRow = TRIANGLE_ROWS - row; // Number of enemies in the current row
+           
+            // Calculate starting X position for the current row to center it
+            startX += (row == 0) ? 0 : (ENEMY_SIZE + ENEMY_GAP) / 2; // Offset for subsequent rows
+            for (int i = 0; i < enemiesInRow; i++) {
+                int posX = startX + i * (ENEMY_SIZE + ENEMY_GAP);
+                bombs.add(new Bomb(posX, currentY, ENEMY_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]));
+            }
+        
+
+            // Move to the next row
+            currentY += ENEMY_SIZE + ENEMY_GAP;
+        }
+    	}
+    }
+    
+    //boss formation
+    private void createBossFormation() {
+        int currentY = -500; // Starting Y position of the triangle formation
+        
+        //spawn 
+        int posX = WIDTH/3;
+       
+        boss.add(new Boss(posX -10, currentY, 380, BOSS_IMG));
+        wheel.add(new Wheel(320, currentY, 580, PROPS_IMG));
+    } 
+}
