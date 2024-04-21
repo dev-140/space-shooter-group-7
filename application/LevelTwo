@@ -53,10 +53,12 @@ public class LevelTwo extends Application {
     private static GraphicsContext gc;
     private Rocket player;
     private List<Shot> shots;
+    private List<EnemyShot> enemyshots;
     private List<Universe> universes;
     private List<Bomb> bombs;
     private List<Boss> boss;
     private List<Wheel> wheel;
+    private List<Tower> tower;
 
     private boolean showPowerUpSelection = false; // Combined flag
     private double mouseX;
@@ -68,6 +70,8 @@ public class LevelTwo extends Application {
     private boolean powerUpAvailable = false;
     private boolean powerUpChosen = false;
     private Timeline timeline;
+    private boolean frozen = false;
+    private int towerSpawnCounter = 0;
     
     static final Image BACKGROUND_GIF = new Image("file:images/bg.gif");
     static final Image PLAYER_IMG = new Image("file:images/player.png");
@@ -90,7 +94,7 @@ public class LevelTwo extends Application {
         canvas.setCursor(Cursor.MOVE);
         canvas.setOnMouseMoved(e -> mouseX = e.getX());
         canvas.setOnMouseClicked(e -> {
-            if (shots.size() < MAX_SHOTS) shots.add(player.shoot());
+            if (shots.size() < MAX_SHOTS && !frozen) shots.add(player.shoot());
             if (gameOver) {
                 gameOver = false;
                 setup();
@@ -108,11 +112,13 @@ public class LevelTwo extends Application {
     private void setup() {
         universes = new ArrayList<>();
         shots = new ArrayList<>();
+        enemyshots = new ArrayList<>();
         bombs = new ArrayList<>();
         boss = new ArrayList<>();
         wheel = new ArrayList<>();
+        tower = new ArrayList<>();
         player = new Rocket(WIDTH / 2, HEIGHT - PLAYER_SIZE, PLAYER_SIZE, PLAYER_IMG);
-        score = 150;
+        score = 147;
 //        IntStream.range(0, MAX_BOMBS).mapToObj(i -> this.newBomb()).forEach(Bombs::add); 
         triangleSpawnTimeline = new Timeline(new KeyFrame(TRIANGLE_SPAWN_INTERVAL, e -> createTriangleFormation()));
         triangleSpawnTimeline.setCycleCount(Timeline.INDEFINITE);
@@ -143,7 +149,33 @@ public class LevelTwo extends Application {
 
         }
         
+        //clocktower something
+
+
+     // Inside the run method or any appropriate update method
+     // Increment the counter
+     towerSpawnCounter++;
+        if (score < 150 && towerSpawnCounter >= 200) {
+        	towerSpawnCounter = 0;
+            tower.add(new Tower(70, -400, 300, new Image("file:images/9.png")));
+            tower.add(new Tower(900, -400, 300, new Image("file:images/9.png")));
+        }
         
+        for (Tower tower : tower) {
+            tower.update();
+            tower.draw();            
+        }
+            
+        for (Tower tower : tower) {
+            if (player.collide(tower) && !player.exploding) {
+                frozen = true;
+                // If the player is colliding with a tower, you might want to break out of the loop
+                // to prevent setting 'frozen' to false if the player is colliding with multiple towers
+                break;
+            } else {
+                frozen = false;
+            }
+        }
         //all boss defeated and boss spawn
 
 
@@ -151,6 +183,9 @@ public class LevelTwo extends Application {
         	
 
         if(score >= 150 && score < 151) {
+        	 for (Bomb bomb : bombs) {
+                 bomb.explode();
+             }
         	createBossFormation();
         	score++;
         	
@@ -177,7 +212,7 @@ public class LevelTwo extends Application {
             gc.setFont(font1);
             gc.setFill(Color.web("#FFFF6E"));
             gc.setTextAlign(TextAlignment.CENTER);
-            gc.fillText("\n\n\nTime begins to shatter", WIDTH / 2, HEIGHT / 2.5);
+            gc.fillText("\n\n\nThe path to Heaven's gate has cleared", WIDTH / 2, HEIGHT / 2.5);
         }
 
         
@@ -200,8 +235,10 @@ public class LevelTwo extends Application {
         // Update and draw player
         player.update();
         player.draw();
+        if (!frozen) {
         player.posX = (int) (mouseX - player.size / 2); // center the player
-
+        }
+        
         // Update and draw bombs
         bombs.stream().peek(Rocket::update).peek(Rocket::draw).forEach(e -> {
             if (player.collide(e) && !player.exploding) {
@@ -225,8 +262,18 @@ public class LevelTwo extends Application {
         });
         
         
-        //shooter enemy
         
+        
+        //shooter enemy
+        bombs.forEach(bomb -> {
+            bomb.update();
+            bomb.draw();
+
+            // Check if it's time for the bomb to shoot
+            if (Math.random() < (score/10) * 0.01 && !bomb.destroyed) { // Adjust the probability as needed
+                shootBomb(bomb); // Call the method to shoot
+            }
+        });
         //Boss movements
        
         for (Boss boss : boss) {
@@ -264,10 +311,43 @@ public class LevelTwo extends Application {
             }
             for (Wheel wheel : wheel) {
                 if (shot.collide(wheel) && !wheel.exploding) {
-                	shot.collidingWithWheel = true;   
+                	shot.bosswheel = true;   
+                }else {
+                	shot.bosswheel = false;
                 }
             }
-          
+            
+            for (Tower tower : tower) {
+                if (shot.collide(tower) && !tower.exploding) {
+                    shot.collidingWithWheel = true;
+                    // You may break the loop here if you want to handle collisions with only one tower
+break;
+                } else {
+                    shot.collidingWithWheel = false;
+                }
+            }
+                    
+        }
+        
+
+        	
+        
+        
+        
+     // Update and draw shots // Changes L
+        for (int i = enemyshots.size() - 1; i >= 0; i--) {
+            EnemyShot enemyshot = enemyshots.get(i);
+            if (enemyshot.posY > HEIGHT || enemyshot.toRemove) {
+                enemyshots.remove(i);
+                continue;
+            }
+            enemyshot.update();
+            enemyshot.draw();          
+            	if (enemyshot.collide(player) && !player.exploding) {
+                    player.explode(); // Player explodes if hit by an enemy shot
+                    enemyshot.toRemove = true; // Remove the enemy shot after collision
+                }
+            
         }
         
      
@@ -306,6 +386,14 @@ public class LevelTwo extends Application {
 
     private static int distance(int x1, int y1, int x2, int y2) {
         return (int) Math.sqrt(Math.pow((x1 - x2), 2) + Math.pow((y1 - y2), 2));
+    }
+    
+    private void shootBomb(Bomb bomb) {
+        int bulletX = bomb.posX + bomb.size / 2; // Calculate bullet position
+        int bulletY = bomb.posY + bomb.size; // Adjust as needed
+
+        // Create and add the bullet to the shots list
+        enemyshots.add(new EnemyShot(bulletX, bulletY));
     }
 
     private void showPowerUpOptions() {
@@ -405,16 +493,19 @@ public class LevelTwo extends Application {
     public class Bomb extends Rocket {
     	int hitpoints;
         int SPEED = (score / 10) + 1;
+        int directionX = 1;
 
         public Bomb(int posX, int posY, int size, Image image) {
             super(posX, posY, size, image);
-            hitpoints = MAX_HITPOINTS;
-        }	
+            hitpoints = MAX_HITPOINTS * 2;
+        }		
 
         public void update() {
             super.update();
-            if (!exploding && !destroyed) posY += SPEED;
-            if (posY > HEIGHT) destroyed = true;
+            if (!exploding && !destroyed) posX += SPEED * directionX;;
+            if (posX <= -300 || posX >= (WIDTH + 300)) {
+                directionX *= -1; // Reverse direction
+            }
         }
         public void hit() {
             hitpoints -= DMG;
@@ -429,57 +520,16 @@ public class LevelTwo extends Application {
     public class Boss extends Rocket {
     	int hitpoints, maxHitpoints;
         int SPEED = 50;
-        private Timeline shootingTimeline;
-        private int bulletCount;
-        private Timeline shootingIntervalTimeline;
-        private boolean isShooting;
+        
 
         public Boss(int posX, int posY, int size, Image image) {
             super(posX, posY, size, image);
             hitpoints = 2000 + (10*MAX_HITPOINTS);
             maxHitpoints = 2000 + (10*MAX_HITPOINTS);
-            isShooting = false;
-            shootingTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> shootBullet()));
-            shootingTimeline.setCycleCount(8); // Shoot 8 bullets
-            shootingIntervalTimeline = new Timeline(new KeyFrame(Duration.seconds(6), e -> startShootingAnimation()));
-            shootingIntervalTimeline.setCycleCount(Timeline.INDEFINITE); // Repeat indefinitely
-            shootingIntervalTimeline.play(); // Start the shooting interval immediately
+           
         }
         
-        private void startShootingAnimation() {
-            // Add animation effects here before starting shooting
-            // For example, you can change the boss image to a shooting animation
-            // or play a sound effect
-            
-            // Set isShooting flag to true to indicate that shooting animation has started
-            isShooting = true;
-
-            // Start shooting after animation duration
-            Duration animationDuration = Duration.seconds(2); // Example duration for animation
-            Timeline delayTimeline = new Timeline(new KeyFrame(animationDuration, e -> startShooting()));
-            delayTimeline.play();
-        }
-        
-        public void startShooting() {
-            if (isShooting) {
-                // Reset isShooting flag
-                isShooting = false;
-
-                // Start shooting bullets
-                shootingTimeline.play();
-            }
-        }
-        
-        private void shootBullet() {
-            // Calculate the position for the next bullet
-            int bulletX = posX + (bulletCount * 20); // Adjust the spacing between bullets as needed
-            int bulletY = posY + size; // Position the bullet below the boss
-
-            // Create and add the bullet to the shots list
-            shots.add(new Shot(bulletX, bulletY));
-
-            bulletCount++;
-        }
+       
         
         
         public void drawHealthBar() {
@@ -492,7 +542,7 @@ public class LevelTwo extends Application {
             gc.setFont(font);
             gc.setFill(Color.web("#FFFF6E"));
             gc.setTextAlign(TextAlignment.CENTER);
-            gc.fillText("Naia, the Time Keeper", healthBarX + size/2, healthBarY -20);
+            gc.fillText("Naia, the Avatar of Time", healthBarX + size/2, healthBarY -20);
             // Draw the background of the health bar (gray)
             gc.setFill(Color.GRAY);
             gc.fillRect(healthBarX, healthBarY, size, healthBarHeight);
@@ -560,15 +610,28 @@ public class LevelTwo extends Application {
         }
     }
     
+    public class Tower extends Rocket {
+        int SPEED = 5;
+    
+        public Tower(int posX, int posY, int size, Image image) {
+            super(posX, posY, size, image);
+        }
+    
+        public void update() {
+            super.update();
+            if (!exploding && !destroyed) posY += SPEED;
+        }
+    }	
 
     // Shot class
     public static class Shot {
 
         public boolean toRemove;
         int posX, posY;
-        public boolean collidingWithWheel;
+        public boolean collidingWithWheel, bosswheel;
         static int size = 6;
         static int speed = 10; // Add speed variable
+        int currentspeed;
 
         private Image bulletImage;
 
@@ -576,17 +639,25 @@ public class LevelTwo extends Application {
             this.posX = posX;
             this.posY = posY;
             bulletImage = new Image("file:images/bullets.png");
+            currentspeed = speed;
         }
 
         public void update() {
-            posY -= speed; // Update the position based on speed
+            posY -= currentspeed; // Update the position based on speed
             
             // Check if the bullet is colliding with a wheel
             if (collidingWithWheel) {
-                speed *= 0.8; // Slow down the bullet while colliding
+                this.currentspeed *= 0.8; // Slow down the bullet while colliding
             } else {
                 // Speed up the bullet if it's not colliding with a wheel
-                speed = 10; // Reset the speed to its original value
+                this.currentspeed = speed; // Reset the speed to its original value
+            }
+            
+            if (bosswheel) {
+                this.currentspeed = speed/6; // Slow down the bullet while colliding
+            } else {
+                // Speed up the bullet if it's not colliding with a wheel
+                this.currentspeed = speed; // Reset the speed to its original value
             }
         }
 
@@ -600,6 +671,44 @@ public class LevelTwo extends Application {
             int distance = distance(this.posX + size / 2, this.posY + size / 2,
                     rocket.posX + rocket.size / 2, rocket.posY + rocket.size / 2);
             return distance < rocket.size / 2 + size / 2;
+        }
+    }
+    
+    public class EnemyShot extends Shot {
+    	private Image ebulletImage;
+    	int speed = 10 + score/20;
+        public EnemyShot(int posX, int posY) {
+            super(posX, posY);
+            ebulletImage = new Image("file:images/enemybullets.png");
+            // Customize the appearance or behavior of the enemy shot if needed
+        }
+        
+        @Override
+        public void update() {
+            posY += speed; // Move the enemy shot downward
+            
+            // Check if the shot collides with the player
+            if (collidePlayer()) {
+                // Perform actions when the shot collides with the player
+                player.explode(); // For example, explode the player
+                toRemove = true; // Mark the shot for removal
+            }
+        }
+        
+        public void draw() {
+            if (ebulletImage != null) {
+                gc.drawImage(ebulletImage, posX, posY, size * 0.2, size * 5);
+            }
+        }
+        
+
+        // Method to check collision with the player
+        private boolean collidePlayer() {
+            // Calculate the distance between the shot and the player
+            int distance = distance(this.posX + size / 2, this.posY + size / 2,
+                    player.posX + player.size / 2, player.posY + player.size / 2);
+            // Check if the distance is less than the sum of the radii of the shot and the player
+            return distance < player.size / 2 + size / 2;
         }
     }
 
@@ -625,29 +734,28 @@ public class LevelTwo extends Application {
     private static final int TRIANGLE_ROWS = 3;
     private static final int ENEMY_SIZE = 50;
     private static final int ENEMY_GAP = 30;
-    private int startX = 100;
+
 
     // Method to create triangle formation of enemies
     private void createTriangleFormation() {
     	if(score < 150 || score >= 160) {
-        int currentY = -210; // Starting Y position of the triangle formation
+    		int[] possibleYValues = {60, 120, 180};
+    		int randomIndex = RAND.nextInt(possibleYValues.length); // Generates a random index within the array length
+    		int currentY = possibleYValues[randomIndex];
 
         // Calculate a random starting X position within the visible area of the screen
-        int startX = RAND.nextInt(WIDTH - (TRIANGLE_ROWS * (ENEMY_SIZE + ENEMY_GAP)));
+        int startX = RAND.nextBoolean() ? WIDTH: -300;
         
-        for (int row = 0; row < TRIANGLE_ROWS; row++) {
-            int enemiesInRow = TRIANGLE_ROWS - row; // Number of enemies in the current row
+        for (int row = 0; row < 3; row++) { // Number of enemies in the current row
            
             // Calculate starting X position for the current row to center it
             startX += (row == 0) ? 0 : (ENEMY_SIZE + ENEMY_GAP) / 2; // Offset for subsequent rows
-            for (int i = 0; i < enemiesInRow; i++) {
-                int posX = startX + i * (ENEMY_SIZE + ENEMY_GAP);
+                int posX = startX + row * (ENEMY_SIZE + ENEMY_GAP);
                 bombs.add(new Bomb(posX, currentY, ENEMY_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]));
-            }
+            
         
 
             // Move to the next row
-            currentY += ENEMY_SIZE + ENEMY_GAP;
         }
     	}
     }
@@ -663,3 +771,6 @@ public class LevelTwo extends Application {
         wheel.add(new Wheel(320, currentY, 580, PROPS_IMG));
     } 
 }
+
+
+//To dos: BOSS atks (the freeze and other bullet shooting), SHOOTER TRACKING PLAYER, SPRITES, NERF WHEEL(make seperate) 
