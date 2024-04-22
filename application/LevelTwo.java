@@ -130,7 +130,7 @@ public class LevelTwo extends Application {
         tower = new ArrayList<>();
         enemyshooter = new ArrayList<>();
         player = new Rocket(WIDTH / 2, HEIGHT - PLAYER_SIZE, PLAYER_SIZE, PLAYER_IMG);
-        score = 100;
+        score = 0;
 //        IntStream.range(0, MAX_BOMBS).mapToObj(i -> this.newBomb()).forEach(Bombs::add); 
         triangleSpawnTimeline = new Timeline(new KeyFrame(TRIANGLE_SPAWN_INTERVAL, e -> createTriangleFormation()));
         triangleSpawnTimeline.setCycleCount(Timeline.INDEFINITE);
@@ -923,4 +923,4 @@ break;
 
 
 
-// SPRITES (enemy, clocktower, enemy 2)
+//TO DO SPRITES (enemy, clocktower, enemy 2)
