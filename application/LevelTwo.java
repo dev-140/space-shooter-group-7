@@ -82,7 +82,8 @@ public class LevelTwo extends Application {
     static final Image PLAYER_IMG = new Image("file:images/player.png");
     static final Image EXPLOSION_IMG = new Image("file:images/explosion.png");
     static final Image[] BOMBS_IMG = {
-        new Image("file:images/1.png"),
+        new Image("file:images/3.png"),
+        new Image("file:images/4.png"),
         new Image("file:images/2.png")
     };
     
@@ -130,7 +131,7 @@ public class LevelTwo extends Application {
         tower = new ArrayList<>();
         enemyshooter = new ArrayList<>();
         player = new Rocket(WIDTH / 2, HEIGHT - PLAYER_SIZE, PLAYER_SIZE, PLAYER_IMG);
-        score = 0;
+        score = 120;
 //        IntStream.range(0, MAX_BOMBS).mapToObj(i -> this.newBomb()).forEach(Bombs::add); 
         triangleSpawnTimeline = new Timeline(new KeyFrame(TRIANGLE_SPAWN_INTERVAL, e -> createTriangleFormation()));
         triangleSpawnTimeline.setCycleCount(Timeline.INDEFINITE);
@@ -176,8 +177,8 @@ public class LevelTwo extends Application {
      towerSpawnCounter++;
         if (score < 150 && towerSpawnCounter >= 200) {
         	towerSpawnCounter = 0;
-            tower.add(new Tower(70, -400, 300, new Image("file:images/9.png")));
-            tower.add(new Tower(900, -400, 300, new Image("file:images/9.png")));
+            tower.add(new Tower(70, -400, 300, new Image("file:images/clocktower.gif")));
+            tower.add(new Tower(900, -400, 300, new Image("file:images/clocktower.gif")));
         }
         
         for (Tower tower : tower) {
@@ -229,19 +230,19 @@ public class LevelTwo extends Application {
         
         if (enemyshooter.size() < 2 && score > 100 && score < 150) {
             int spawnChance = RAND.nextInt(500);
-            int X = RAND.nextInt(WIDTH);
+            int X = RAND.nextInt(WIDTH - 100);
             if (spawnChance < 10) {
-            	enemyshooter.add(new EnemyShooter(X, -150, ENEMY_SIZE, BOMBS_IMG[1]));// Adjust the spawn chance as needed
+            	enemyshooter.add(new EnemyShooter(X, -150, 100, BOMBS_IMG[0]));// Adjust the spawn chance as needed
             }
         }
         
         if (enemyshooter.size() < 5 && score > 150 && score < 850) {
             int spawnChance = RAND.nextInt(400);
             if (spawnChance < 10 && enemyshooter.size() < 1) { // Adjust the spawn chance as needed
-            	enemyshooter.add(new EnemyShooter(300, -150, ENEMY_SIZE, BOMBS_IMG[1]));
-            	enemyshooter.add(new EnemyShooter(WIDTH - 400, -150, ENEMY_SIZE, BOMBS_IMG[1]));
-            	enemyshooter.add(new EnemyShooter(200, -50, ENEMY_SIZE, BOMBS_IMG[1]));
-            	enemyshooter.add(new EnemyShooter(WIDTH - 300, -50, ENEMY_SIZE, BOMBS_IMG[1]));
+            	enemyshooter.add(new EnemyShooter(300, -150, 100, BOMBS_IMG[0]));
+            	enemyshooter.add(new EnemyShooter(WIDTH - 400, -150, 100, BOMBS_IMG[0]));
+            	enemyshooter.add(new EnemyShooter(100, -50, 100, BOMBS_IMG[0]));
+            	enemyshooter.add(new EnemyShooter(WIDTH -200, -50, 100, BOMBS_IMG[0]));
             }
         }
         
@@ -591,7 +592,7 @@ break;
         public void update() {
             super.update();
             if (!exploding && !destroyed) posX += SPEED * directionX;;
-            if (posX <= -300 || posX >= (WIDTH + 300)) {
+            if (posX <= -500 || posX >= (WIDTH + 500)) {
                 directionX *= -1; // Reverse direction
             }
         }
@@ -891,14 +892,14 @@ break;
     		int currentY = possibleYValues[randomIndex];
 
         // Calculate a random starting X position within the visible area of the screen
-        int startX = RAND.nextBoolean() ? WIDTH: -300;
+        int startX = RAND.nextBoolean() ? WIDTH: -500;
         
         for (int row = 0; row < 3; row++) { // Number of enemies in the current row
            
             // Calculate starting X position for the current row to center it
             startX += (row == 0) ? 0 : (ENEMY_SIZE + ENEMY_GAP) / 2; // Offset for subsequent rows
                 int posX = startX + row * (ENEMY_SIZE + ENEMY_GAP);
-                bombs.add(new Bomb(posX, currentY, ENEMY_SIZE, BOMBS_IMG[0]));
+                bombs.add(new Bomb(posX, currentY, ENEMY_SIZE, BOMBS_IMG[2]));
             
         
 
@@ -914,13 +915,11 @@ break;
         int currentY = -500; // Starting Y position of the triangle formation
         
         //spawn 
-        int posX = WIDTH/3;
+        int posX = WIDTH/2;
        
-        boss.add(new Boss(posX -10, currentY, 380, BOSS_IMG));
-        wheel.add(new Wheel(320, currentY, 580, PROPS_IMG));
+        boss.add(new Boss(posX - 390/2, currentY, 380, BOSS_IMG));
+        wheel.add(new Wheel(posX - 580/2, currentY, 580, PROPS_IMG));
     } 
 }
 
 
-
-//TO DO SPRITES (enemy, clocktower, enemy 2)
