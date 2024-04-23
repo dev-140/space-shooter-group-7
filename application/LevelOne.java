@@ -31,14 +31,19 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import application.SpaceShooter.Bomb;
-import application.SpaceShooter.Shot;
+import application.LevelThree.Asteroid;
+import application.LevelThree.Rocket;
+
+import java.awt.AWTException;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
+
 
 public class LevelOne extends Application {
 
     private static final Random RAND = new Random();
-    private static final int WIDTH = 800;
-    private static final int HEIGHT = 600;
+    private static final int WIDTH = 1380;
+    private static final int HEIGHT = 680;
     private static final int PLAYER_SIZE = 60;
     private static final int MAX_BOMBS = 10;
     private static final int MAX_SHOTS = MAX_BOMBS * 2;
@@ -58,6 +63,10 @@ public class LevelOne extends Application {
     private List<Bomb> bombs;
     private List<BossH> bossH;
     private List<Boss> boss;
+    ArrayList<Rocket> players = new ArrayList<>();
+    
+  
+    
 
     private boolean showPowerUpSelection = false; // Combined flag
     private double mouseX;
@@ -110,6 +119,8 @@ public class LevelOne extends Application {
         bombs = new ArrayList<>();
         boss = new ArrayList<>();
         bossH = new ArrayList<>();
+        blackholes = new ArrayList<>();
+      
         player = new Rocket(WIDTH / 2, HEIGHT - PLAYER_SIZE, PLAYER_SIZE, PLAYER_IMG);
         score = 0;
 //        IntStream.range(0, MAX_BOMBS).mapToObj(i -> this.newBomb()).forEach(Bombs::add); 
@@ -117,7 +128,22 @@ public class LevelOne extends Application {
         triangleSpawnTimeline.setCycleCount(Timeline.INDEFINITE);
         triangleSpawnTimeline.play();
         createTriangleFormation();        
+        
     }
+    private List<Blackhole> blackholes;
+    public class Blackhole extends Rocket {
+        int SPEED = 5;
+    
+        public Blackhole(int posX, int posY, int size, Image image) {
+            super(posX, posY, size, image);
+        }
+    
+        public void update() {
+            super.update();
+            if (!exploding && !destroyed) posY += SPEED;
+        }
+    }
+    
     
     
 
@@ -131,6 +157,8 @@ public class LevelOne extends Application {
 
         // Debug print
         System.out.println("Current score: " + score);
+        
+    
 
         // Check if power-up is available and handle power-up selection
         if (score > 0 && score % 35 == 0 && !showPowerUpSelection && score < 152) {
@@ -142,6 +170,47 @@ public class LevelOne extends Application {
             score++;
 
         }
+        if (RAND.nextInt(100) < 1) {
+        	int X;
+        	X = 50 + RAND.nextInt(WIDTH - 100);
+            Blackhole newBlackhole = new Blackhole(X, 0, PLAYER_SIZE, new Image("file:images/blackhole.jpg"));
+            blackholes.add(newBlackhole);
+        }
+        
+        
+        
+        blackholes.forEach(blackholes -> {
+            blackholes.update();
+            blackholes.draw();
+            double distance = Math.sqrt(Math.pow(player.posX - blackholes.posX, 2) + Math.pow(player.posY - blackholes.posY, 2));
+
+            // Define the range where gravitational pull starts affecting the player
+            double gravitationalRange = 200; // Adjust this value as needed
+
+            if(distance < gravitationalRange) {
+            	 {
+        		 Robot robot;
+				
+                // Calculate gravitational force direction
+            		 
+                double dx = blackholes.posX - player.posX;
+                double dy = blackholes.posY - player.posY;
+                double angle = Math.atan2(dy, dx);
+                int offsetX = (blackholes.posX - (player.posX))/3;
+                // Apply gravitational force to player
+                try {
+						robot = new Robot();
+					 
+		                int currentX = (int) java.awt.MouseInfo.getPointerInfo().getLocation().getX();
+		                robot.mouseMove(currentX + offsetX, (int) java.awt.MouseInfo.getPointerInfo().getLocation().getY());
+		               
+				} catch (AWTException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+            	}
+            }
+        });
         
         
         //all boss defeated and boss spawn
@@ -263,8 +332,15 @@ public class LevelOne extends Application {
                     shot.toRemove = true;
                 }
             }
+            
+            
         }
         
+//        for (Blackhole bh : blackholes) {
+//            bla.applyGravity(bombs); // Apply gravity to bombs
+////            bh.applyGravity(asteroid); // Apply gravity to asteroids
+//        }
+//        
      
 
 //        for (int i = Bombs.size() - 1; i >= 0; i--) {
@@ -481,7 +557,7 @@ public class LevelOne extends Application {
         public Shot(int posX, int posY) {
             this.posX = posX;
             this.posY = posY;
-            bulletImage = new Image("file:images/bullets.png");
+            bulletImage = new Image("file:images/bullet.png");
         }
 
         public void update() {
@@ -574,6 +650,6 @@ public class LevelOne extends Application {
         bossH.add(new BossH(posX + 10, currentY, 480, BOSS_H_IMG));
             
         }
-        
+
    
 }
