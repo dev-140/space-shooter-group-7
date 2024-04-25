@@ -99,7 +99,7 @@ public class LevelThree extends Application {
             if (gameOver && score >= 150) {
                 gameOver = false;
                 setup();
-                score = 150;
+                score = 0;
             }	else if (gameOver && score < 150) {
             	gameOver = false;
                 setup();
@@ -132,7 +132,7 @@ public class LevelThree extends Application {
         boss = new ArrayList<>();
         asteroids = new ArrayList<>();
         player = new Rocket(WIDTH / 2, HEIGHT - PLAYER_SIZE, PLAYER_SIZE, PLAYER_IMG);
-        score = 0;
+        score = 150;
 //        IntStream.range(0, MAX_BOMBS).mapToObj(i -> this.newBomb()).forEach(Bombs::add); 
         triangleSpawnTimeline = new Timeline(new KeyFrame(TRIANGLE_SPAWN_INTERVAL, e -> createTriangleFormation()));
         triangleSpawnTimeline.setCycleCount(Timeline.INDEFINITE);
@@ -491,7 +491,7 @@ public class LevelThree extends Application {
         int SPEED = 5;
         int directionX = 1;
         int directionY = 1;
-        private static final int SHOOTING_COOLDOWN = 100; // Adjust as needed
+        private static final int SHOOTING_COOLDOWN = 120; // Adjust as needed
         private int shootingCooldown = SHOOTING_COOLDOWN;
 
         public Boss(int posX, int posY, int size, Image image) {
@@ -536,15 +536,18 @@ public class LevelThree extends Application {
             if (posY <= -120 || posY >= -45) {
                 directionY *= -1; // Reverse direction
             }
-            if (!exploding && hitpoints <= 500)hitpoints++;
-            
+            if (!exploding && hitpoints <= 50)hitpoints++;
+            if (shootingCooldown <= 90 && !destroyed) {
+                // Shoot towards the player
+            	shootingCooldown--;
             if (shootingCooldown <= 80 && !destroyed) {
                 // Shoot towards the player
             	shootingCooldown--;
-                shootTowardsPlayer();
+                shotgun();
                 if (shootingCooldown <= 0 && !destroyed) {
                 shootingCooldown = SHOOTING_COOLDOWN;
                 }
+            }
             }
         }
         
@@ -559,6 +562,23 @@ public class LevelThree extends Application {
             int bulletY = posY + size / 2; // Adjust as needed
             // You can adjust the speed and other properties of the shot as needed
             enemyshots.add(new EnemyShot(bulletX, bulletY, angle, BULLET_IMG));
+        }
+        private void shotgun() {
+            // Calculate direction towards the player
+        	double deltaX = player.posX - (posX+ 250);
+            double deltaY = player.posY - (posY+ 250);
+            double angle = Math.atan2(deltaY, deltaX);
+
+            // Create a new shot towards the player's position
+            int bulletX = posX + size / 2; // Adjust as needed
+            int bulletY = posY + size / 2; // Adjust as needed
+            // You can adjust the speed and other properties of the shot as needed
+            enemyshots.add(new EnemyShot(bulletX, bulletY, angle + 0.3, new Image("file:images/bullets.png")));
+            enemyshots.add(new EnemyShot(bulletX, bulletY, angle - 0.3, new Image("file:images/bullets.png")));
+            enemyshots.add(new EnemyShot(bulletX, bulletY, angle + 0.5, new Image("file:images/bullets.png")));
+            enemyshots.add(new EnemyShot(bulletX, bulletY, angle - 0.5, new Image("file:images/bullets.png")));
+            enemyshots.add(new EnemyShot(bulletX, bulletY, angle + 0.75, new Image("file:images/bullets.png")));
+            enemyshots.add(new EnemyShot(bulletX, bulletY, angle - 0.75, new Image("file:images/bullets.png")));
         }
         
         public void hit() {
