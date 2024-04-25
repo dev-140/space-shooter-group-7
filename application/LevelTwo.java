@@ -361,7 +361,7 @@ public class LevelTwo extends Application {
             bomb.draw();
 
             // Check if it's time for the bomb to shoot
-            if (Math.random() <  0.02 && !bomb.destroyed) { // Adjust the probability as needed
+             if (Math.random() <  0.01 && !bomb.destroyed) { // Adjust the probability as needed // final changed 
                 shootBomb(bomb); // Call the method to shoot
             }
         });
@@ -906,7 +906,7 @@ break;
     		int currentY = possibleYValues[randomIndex];
 
         // Calculate a random starting X position within the visible area of the screen
-        int startX = RAND.nextBoolean() ? WIDTH: -500;
+                int startX = RAND.nextBoolean() ? WIDTH: -290; // final changed
         
         for (int row = 0; row < 3; row++) { // Number of enemies in the current row
            
