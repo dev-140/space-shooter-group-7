@@ -75,6 +75,7 @@ public class LevelTwo extends Application {
     private boolean frozen = false;
     private boolean warn = false;
     private int towerSpawnCounter = 0;
+    private boolean gameFinished = false;
     
     static final Image BACKGROUND_GIF = new Image("file:images/bg.gif");
     static final Image WARN_BACKGROUND_IMG = new Image("file:images/WARN.png");
@@ -111,6 +112,16 @@ public class LevelTwo extends Application {
                 gameOver = false;
                 setup();
             }
+            if (gameFinished) {
+                gameFinished = false;
+                LevelThree levelthree = new LevelThree();
+                try {
+					levelthree.start(stage);
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+            }
         });
         setup();
         stage.setScene(new Scene(new StackPane(canvas)));
@@ -131,7 +142,7 @@ public class LevelTwo extends Application {
         tower = new ArrayList<>();
         enemyshooter = new ArrayList<>();
         player = new Rocket(WIDTH / 2, HEIGHT - PLAYER_SIZE, PLAYER_SIZE, PLAYER_IMG);
-        score = 120;
+        score = 0;
 //        IntStream.range(0, MAX_BOMBS).mapToObj(i -> this.newBomb()).forEach(Bombs::add); 
         triangleSpawnTimeline = new Timeline(new KeyFrame(TRIANGLE_SPAWN_INTERVAL, e -> createTriangleFormation()));
         triangleSpawnTimeline.setCycleCount(Timeline.INDEFINITE);
@@ -283,8 +294,11 @@ public class LevelTwo extends Application {
             gc.setFill(Color.web("#FFFF6E"));
             gc.setTextAlign(TextAlignment.CENTER);
             gc.fillText("\n\n\nThe path to Heaven's gate has cleared", WIDTH / 2, HEIGHT / 2.5);
+            
+            gameFinished = true;
         }
-
+        
+        
         
         // Resume the game if power-up selection is done
         if (powerUpChosen) {
@@ -675,8 +689,8 @@ break;
 
         public Boss(int posX, int posY, int size, Image image) {
             super(posX, posY, size, image);
-            hitpoints = 2100;
-            maxHitpoints = 2100; 
+            hitpoints = 1600;
+            maxHitpoints = 1600; 
         }
        
         public void drawHealthBar() {
