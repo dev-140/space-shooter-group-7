@@ -487,7 +487,7 @@ public class LevelThree extends Application {
         int SPEED = 5;
         int directionX = 1;
         int directionY = 1;
-        private static final int SHOOTING_COOLDOWN = 30; // Adjust as needed
+        private static final int SHOOTING_COOLDOWN = 100; // Adjust as needed
         private int shootingCooldown = SHOOTING_COOLDOWN;
 
         public Boss(int posX, int posY, int size, Image image) {
@@ -534,7 +534,7 @@ public class LevelThree extends Application {
             }
             if (!exploding && hitpoints <= 500)hitpoints++;
             
-            if (shootingCooldown <= 20 && !destroyed) {
+            if (shootingCooldown <= 80 && !destroyed) {
                 // Shoot towards the player
             	shootingCooldown--;
                 shootTowardsPlayer();
@@ -604,7 +604,7 @@ public class LevelThree extends Application {
     
     public class EnemyShot extends Shot {
     	private Image image;
-    	int speed = 10 + score/20;
+    	int speed = 30 + score/20;
     	private double angle; // Add angle field
     	
         public EnemyShot(int posX, int posY, double angle, Image image) {
