@@ -94,10 +94,14 @@ public class LevelOne extends Application {
         canvas.setOnMouseMoved(e -> mouseX = e.getX());
         canvas.setOnMouseClicked(e -> {
             if (shots.size() < MAX_SHOTS) shots.add(player.shoot());
-            if (gameOver) {
+            if (gameOver && score >= 150) {
                 gameOver = false;
                 setup();
-            }
+                score = 150;
+            }	else if (gameOver && score < 150) {
+            	gameOver = false;
+                setup();
+                }
             if (gameFinished) {
                 gameFinished = false;
                 LevelTwo leveltwo = new LevelTwo();
