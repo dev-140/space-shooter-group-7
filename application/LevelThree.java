@@ -563,7 +563,7 @@ public class LevelThree extends Application {
         	shootingCooldown--;
             if (hitpoints <= 0) {
                 explode();
-                score+= 50;
+                score+= 750;
             }
         }
     }
