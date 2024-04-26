@@ -99,21 +99,21 @@ public class LevelThree extends Application {
             if (gameOver && score >= 150) {
                 gameOver = false;
                 setup();
-                score = 0;
+                score = 150;
             }	else if (gameOver && score < 150) {
             	gameOver = false;
                 setup();
                 }
-//            if (gameFinished) {
-//                gameFinished = false;
-//                Main levelthree = new Main();
-//                try {
-//					levelthree.start(stage);
-//				} catch (Exception e1) {
-//					// TODO Auto-generated catch block
-//					e1.printStackTrace();
-//				}
-//            }
+          if (gameFinished) {
+              gameFinished = false;
+                Main levelthree = new Main();
+                try {
+					levelthree.start(stage);
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+            }
         });
         setup();
         stage.setScene(new Scene(new StackPane(canvas)));
@@ -586,7 +586,7 @@ public class LevelThree extends Application {
             super.update();
             if (!exploding && !destroyed) posY += 2 * directionY;;
             if (!exploding && !destroyed) posX += SPEED * directionX;;
-            if (posX <= 0 || posX >= (WIDTH)-500) {
+            if (posX <= -10 || posX >= (WIDTH)-490) {
                 directionX *= -1; // Reverse direction
             }
             if (posY <= -120 || posY >= -45) {
@@ -629,8 +629,8 @@ public class LevelThree extends Application {
             int bulletX = posX + size / 2; // Adjust as needed
             int bulletY = posY + size / 2; // Adjust as needed
             // You can adjust the speed and other properties of the shot as needed
-            enemyshots.add(new EnemyShot(bulletX, bulletY, angle + 0.3, new Image("file:images/bullet.png")));
-            enemyshots.add(new EnemyShot(bulletX, bulletY, angle - 0.3, new Image("file:images/bullet.png")));
+            enemyshots.add(new EnemyShot(bulletX, bulletY, angle + 0.25, new Image("file:images/bullet.png")));
+            enemyshots.add(new EnemyShot(bulletX, bulletY, angle - 0.25, new Image("file:images/bullet.png")));
             enemyshots.add(new EnemyShot(bulletX, bulletY, angle + 0.5, new Image("file:images/bullet.png")));
             enemyshots.add(new EnemyShot(bulletX, bulletY, angle - 0.5, new Image("file:images/bullet.png")));
             enemyshots.add(new EnemyShot(bulletX, bulletY, angle + 0.75, new Image("file:images/bullet.png")));
