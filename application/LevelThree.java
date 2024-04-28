@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import application.LevelOne.Blackhole;
 import application.LevelThree.Boss;
 import application.LevelThree.Rocket;
 import application.LevelThree.Universe;
@@ -78,7 +77,7 @@ public class LevelThree extends Application {
 
     static final Image PLAYER_IMG = new Image("file:images/player.png");
     static final Image EXPLOSION_IMG = new Image("file:images/explosion.png");
-    static final Image BULLET_IMG = new Image("file:images/homingbullet.png");
+    static final Image BULLET_IMG = new Image("file:images/homingbullets.png");
     static final Image[] BOMBS_IMG = {
         new Image("file:images/4.png")
     };
@@ -190,7 +189,7 @@ public class LevelThree extends Application {
             score++;
 
         }
-        if (RAND.nextInt(100) < 1) {
+        if (RAND.nextInt(500) < 1 && score >= 50 && score <= 150) {
         	int X;
         	X = 50 + RAND.nextInt(WIDTH - 100);
             Blackhole newBlackhole = new Blackhole(X, 0, PLAYER_SIZE, new Image("file:images/blackhole.png"));
@@ -232,8 +231,8 @@ public class LevelThree extends Application {
             }
         });
         
-        if (RAND.nextInt(500) < 3) {
-            Asteroid newAsteroid = new Asteroid(50 + RAND.nextInt(WIDTH - 100), 0, PLAYER_SIZE, new Image("file:images/3.png"));
+        if (RAND.nextInt(500) < 3 && score <= 150) {
+            Asteroid newAsteroid = new Asteroid(50 + RAND.nextInt(WIDTH - 100), 0, PLAYER_SIZE, new Image("file:images/1.png"));
             asteroids.add(newAsteroid);
         }
         
@@ -629,12 +628,12 @@ public class LevelThree extends Application {
             int bulletX = posX + size / 2; // Adjust as needed
             int bulletY = posY + size / 2; // Adjust as needed
             // You can adjust the speed and other properties of the shot as needed
-            enemyshots.add(new EnemyShot(bulletX, bulletY, angle + 0.25, new Image("file:images/bullet.png")));
-            enemyshots.add(new EnemyShot(bulletX, bulletY, angle - 0.25, new Image("file:images/bullet.png")));
-            enemyshots.add(new EnemyShot(bulletX, bulletY, angle + 0.5, new Image("file:images/bullet.png")));
-            enemyshots.add(new EnemyShot(bulletX, bulletY, angle - 0.5, new Image("file:images/bullet.png")));
-            enemyshots.add(new EnemyShot(bulletX, bulletY, angle + 0.75, new Image("file:images/bullet.png")));
-            enemyshots.add(new EnemyShot(bulletX, bulletY, angle - 0.75, new Image("file:images/bullet.png")));
+            enemyshots.add(new EnemyShot(bulletX, bulletY, angle + 0.25, new Image("file:images/bullets.png")));
+            enemyshots.add(new EnemyShot(bulletX, bulletY, angle - 0.25, new Image("file:images/bullets.png")));
+            enemyshots.add(new EnemyShot(bulletX, bulletY, angle + 0.5, new Image("file:images/bullets.png")));
+            enemyshots.add(new EnemyShot(bulletX, bulletY, angle - 0.5, new Image("file:images/bullets.png")));
+            enemyshots.add(new EnemyShot(bulletX, bulletY, angle + 0.75, new Image("file:images/bullets.png")));
+            enemyshots.add(new EnemyShot(bulletX, bulletY, angle - 0.75, new Image("file:images/bullets.png")));
         }
         
         public void hit() {
@@ -661,8 +660,8 @@ public class LevelThree extends Application {
 
         public Shot(int posX, int posY) {
             this.posX = posX;
-            this.posY = posY;
-            bulletImage = new Image("file:images/bullet.png");
+            this.posY = posY;	
+            bulletImage = new Image("file:images/bullets.png");
         }
 
         public void update() {
