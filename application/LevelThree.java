@@ -2,10 +2,12 @@ package application;
 
 import javafx.application.Application;
 import javafx.scene.Cursor;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -19,25 +21,29 @@ import javafx.scene.text.FontWeight;
 
 //FOR OPTION
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
 import javafx.scene.layout.VBox;
 
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.fxml.FXMLLoader;
 
+import java.awt.AWTException;
+import java.awt.Robot;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.stream.IntStream;
 
 import application.LevelThree.Boss;
 import application.LevelThree.Rocket;
 import application.LevelThree.Universe;
-import application.LevelTwo.EnemyShot;
-import application.LevelTwo.Wheel;
-import application.SpaceShooter.Bomb;
-import application.SpaceShooter.Shot;
 
 public class LevelThree extends Application {
 
@@ -51,9 +57,6 @@ public class LevelThree extends Application {
     private static final int EXPLOSION_COL = 3;
     private static final int EXPLOSION_H = 128;
     private static final int EXPLOSION_STEPS = 15;
-    
-    
-    
 
     private static GraphicsContext gc;
     private Rocket player;
@@ -61,11 +64,12 @@ public class LevelThree extends Application {
     private List<EnemyShot> enemyshots;
     private List<Universe> universes;
     private List<Bomb> bombs;
-    
+
     private List<Boss> boss;
 
     private boolean showPowerUpSelection = false; // Combined flag
     private double mouseX;
+    private double mouseY;
     private int score;
     private int MAX_HITPOINTS = 1; // Changes L
     private int MAX_SHOTS = 15;
@@ -76,81 +80,192 @@ public class LevelThree extends Application {
     private boolean gameFinished = false;
     private int DMG = 1; // Changes L
 
-    static final Image PLAYER_IMG = new Image("file:images/player.png");
-    static final Image EXPLOSION_IMG = new Image("file:images/explosion.png");
-    static final Image BULLET_IMG = new Image("file:images/homingbullets.png");
+    static final Image PLAYER_IMG = new Image("file:src/images/player.png");
+    static final Image EXPLOSION_IMG = new Image("file:src/images/explosion.png");
+    static final Image BULLET_IMG = new Image("file:src/images/homingbullets.png");
     static final Image[] BOMBS_IMG = {
-        new Image("file:images/4.png")
+            new Image("file:src/images/4.png")
     };
-    
-    //Boss sprites
-    static final Image BOSS_IMG = new Image("file:images/Seraphim.png");
+
+    // Boss sprites
+    static final Image BOSS_IMG = new Image("file:src/images/Seraphim.png");
 
     public void start(Stage stage) throws Exception {
         Canvas canvas = new Canvas(WIDTH, HEIGHT);
         gc = canvas.getGraphicsContext2D();
-        timeline = new Timeline(new KeyFrame(Duration.millis(100), e -> run(gc)));
+
+        StackPane stackPane = new StackPane();
+        stackPane.getChildren().add(canvas);
+
+        Button menuButton = new Button("Pause");
+        menuButton.getStyleClass().add("pause-button");
+        menuButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                pauseGame();
+                showMenuOptions(stage);
+            }
+        });
+
+        HBox menuContainer = new HBox();
+        menuContainer.getChildren().add(menuButton);
+        menuContainer.setAlignment(javafx.geometry.Pos.TOP_RIGHT);
+        menuContainer.setPadding(new javafx.geometry.Insets(10));
+        StackPane.setAlignment(menuContainer, javafx.geometry.Pos.TOP_RIGHT);
+
+        stackPane.getChildren().add(menuContainer);
+
+        timeline = new Timeline(new KeyFrame(Duration.millis(50), e -> run(gc)));
         timeline.setCycleCount(Timeline.INDEFINITE);
         timeline.play();
-        canvas.setCursor(Cursor.MOVE);
-        canvas.setOnMouseMoved(e -> mouseX = e.getX());
-        canvas.setOnMouseClicked(e -> {
-            if (shots.size() < MAX_SHOTS) shots.add(player.shoot());
+
+        Scene scene = new Scene(stackPane, WIDTH, HEIGHT);
+        scene.getStylesheets().add(getClass().getResource("main.css").toExternalForm());
+        scene.setCursor(Cursor.MOVE);
+
+        scene.setOnMouseMoved(e -> {
+            mouseX = e.getX();
+            mouseY = e.getY();
+        });
+
+        scene.setOnMouseClicked(e -> {
+            if (shots.size() < MAX_SHOTS)
+                shots.add(player.shoot());
             if (gameOver && score >= 150) {
                 gameOver = false;
                 setup();
-                score = 0;
-            }	else if (gameOver && score < 150) {
-            	gameOver = false;
+                score = 150;
+            } else if (gameOver && score < 150) {
+                gameOver = false;
                 setup();
-                }
+            }
             if (gameFinished) {
                 gameFinished = false;
                 Main levelthree = new Main();
                 try {
-					levelthree.start(stage);
-				} catch (Exception e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
+                    levelthree.start(stage);
+                } catch (Exception e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                }
             }
         });
-        setup();
-        stage.setScene(new Scene(new StackPane(canvas)));
+
+        scene.setOnKeyPressed(event -> {
+            switch (event.getCode()) {
+                case ESCAPE:
+                    pauseGame();
+                    showMenuOptions(stage);
+                    break;
+                default:
+                    break;
+            }
+        });
+
+        stage.setScene(scene);
         stage.setTitle("Heaven's Gate");
         stage.show();
+
+        setup();
     }
 
     // Setup method
     private static final Duration TRIANGLE_SPAWN_INTERVAL = Duration.seconds(7); // Spawn triangle every 3 seconds
     private Timeline triangleSpawnTimeline;
+
     private void setup() {
         universes = new ArrayList<>();
         shots = new ArrayList<>();
         enemyshots = new ArrayList<>();
         bombs = new ArrayList<>();
         boss = new ArrayList<>();
+        blackholes = new ArrayList<>();
         asteroids = new ArrayList<>();
         player = new Rocket(WIDTH / 2, HEIGHT - PLAYER_SIZE, PLAYER_SIZE, PLAYER_IMG);
-        score = 150;
-//        IntStream.range(0, MAX_BOMBS).mapToObj(i -> this.newBomb()).forEach(Bombs::add); 
+        score = 0;
+        // IntStream.range(0, MAX_BOMBS).mapToObj(i ->
+        // this.newBomb()).forEach(Bombs::add);
         triangleSpawnTimeline = new Timeline(new KeyFrame(TRIANGLE_SPAWN_INTERVAL, e -> createTriangleFormation()));
         triangleSpawnTimeline.setCycleCount(Timeline.INDEFINITE);
         triangleSpawnTimeline.play();
-        createTriangleFormation();        
+        createTriangleFormation();
+    }
+
+    private List<Blackhole> blackholes;
+
+    public class Blackhole extends Rocket {
+        int SPEED = 5;
+
+        public Blackhole(int posX, int posY, int size, Image image) {
+            super(posX, posY, size, image);
+        }
+
+        public void update() {
+            super.update();
+            if (!exploding && !destroyed)
+                posY += SPEED;
+        }
     }
 
     private List<Asteroid> asteroids;
+
     public class Asteroid extends Rocket {
         int SPEED = 20;
-    
+
         public Asteroid(int posX, int posY, int size, Image image) {
             super(posX, posY, size, image);
         }
-    
+
         public void update() {
             super.update();
-            if (!exploding && !destroyed) posY += SPEED;
+            if (!exploding && !destroyed)
+                posY += SPEED;
+        }
+    }
+
+    private void pauseGame() {
+        if (timeline != null) {
+            timeline.stop();
+        }
+    }
+
+    private void resumeGame() {
+        if (timeline != null) {
+            timeline.play();
+        }
+    }
+
+    private void showMenuOptions(Stage stage) {
+        Alert alert = new Alert(Alert.AlertType.NONE);
+        alert.setHeaderText("Game Paused");
+        alert.setContentText("Choose an option:");
+
+        ButtonType resumeButton = new ButtonType("Resume");
+        ButtonType mainMenuButton = new ButtonType("Return to Level Selection");
+
+        alert.getButtonTypes().setAll(resumeButton, mainMenuButton);
+
+        Optional<ButtonType> result = alert.showAndWait();
+
+        if (result.isPresent()) {
+            if (result.get() == resumeButton) {
+                resumeGame(); // Resume the game
+            } else if (result.get() == mainMenuButton) {
+                try {
+                    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("LevelSelection.fxml"));
+                    Parent parent = fxmlLoader.load();
+                    Scene mainMenuScene = new Scene(parent);
+
+                    stage.setScene(mainMenuScene);
+                    stage.show();
+                } catch (IOException ex) {
+                    Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+                    errorAlert.setTitle("Error");
+                    errorAlert.setHeaderText("Navigation Error");
+                    errorAlert.setContentText("Unable to load LevelSelection.fxml");
+                    errorAlert.showAndWait();
+                }
+            }
         }
     }
 
@@ -175,12 +290,54 @@ public class LevelThree extends Application {
             score++;
 
         }
-        
-        if (RAND.nextInt(500) < 3) {
-            Asteroid newAsteroid = new Asteroid(50 + RAND.nextInt(WIDTH - 100), 0, PLAYER_SIZE, new Image("file:images/3.png"));
+        if (RAND.nextInt(500) < 1 && score >= 50 && score <= 150) {
+            int X;
+            X = 50 + RAND.nextInt(WIDTH - 100);
+            Blackhole newBlackhole = new Blackhole(X, 0, PLAYER_SIZE, new Image("file:src/images/blackhole.png"));
+            blackholes.add(newBlackhole);
+        }
+
+        blackholes.forEach(blackholes -> {
+            blackholes.update();
+            blackholes.draw();
+            double distance = Math
+                    .sqrt(Math.pow(player.posX - blackholes.posX, 2) + Math.pow(player.posY - blackholes.posY, 2));
+
+            // Define the range where gravitational pull starts affecting the player
+            double gravitationalRange = 200; // Adjust this value as needed
+
+            if (distance < gravitationalRange) {
+                {
+                    Robot robot;
+
+                    // Calculate gravitational force direction
+
+                    double dx = blackholes.posX - player.posX;
+                    double dy = blackholes.posY - player.posY;
+                    double angle = Math.atan2(dy, dx);
+                    int offsetX = (blackholes.posX - (player.posX)) / 3;
+                    // Apply gravitational force to player
+                    try {
+                        robot = new Robot();
+
+                        int currentX = (int) java.awt.MouseInfo.getPointerInfo().getLocation().getX();
+                        robot.mouseMove(currentX + offsetX,
+                                (int) java.awt.MouseInfo.getPointerInfo().getLocation().getY());
+
+                    } catch (AWTException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+
+        if (RAND.nextInt(500) < 3 && score <= 150) {
+            Asteroid newAsteroid = new Asteroid(50 + RAND.nextInt(WIDTH - 100), 0, PLAYER_SIZE,
+                    new Image("file:src/images/asteroid.png"));
             asteroids.add(newAsteroid);
         }
-        
+
         asteroids.forEach(asteroid -> {
             asteroid.update();
             asteroid.draw();
@@ -189,41 +346,37 @@ public class LevelThree extends Application {
                 player.explode();
             }
         });
-        
-        
-        //all boss defeated and boss spawn
 
-        
-        if(score >= 150 && boss.size() < 1) {
-        	createBossFormation();
-        	score++;
-        	
+        // all boss defeated and boss spawn
+
+        if (score >= 150 && boss.size() < 1) {
+            createBossFormation();
+            score++;
+
         }
-        
-        
-        
+
         if (score > 850) {
             // Stop the game
-        	timeline.stop();
-            
+            timeline.stop();
+
             // Display "LEVEL CLEARED" screen
             gc.setFill(Color.BLACK);
             gc.fillRect(0, 0, WIDTH, HEIGHT);
             gc.setFont(Font.font(35));
             gc.setFill(Color.WHITE);
             gc.setTextAlign(TextAlignment.CENTER);
-            gc.fillText("GUARDIAN SLAIN\nYour Total Score is: " + (score + 850*2)  + "\nYou finished the game", WIDTH / 2, HEIGHT / 2.5);
-            
+            gc.fillText("GUARDIAN SLAIN\nYour Total Score is: " + (score + 850 * 2) + "\nYou finished the game",
+                    WIDTH / 2, HEIGHT / 2.5);
+
             gameFinished = true;
         }
 
-        
         // Resume the game if power-up selection is done
         if (powerUpChosen) {
             timeline.play();
         }
 
-        //DRAW UNIVERSE
+        // DRAW UNIVERSE
         universes.forEach(Universe::draw);
 
         // Increase hp of enemy for every 50 points , Max hp is 3 // Changes L
@@ -232,11 +385,25 @@ public class LevelThree extends Application {
             MAX_HITPOINTS++;
             score++;
         }
-        
-        
+
         // Update and draw player
         player.update();
         player.draw();
+
+        // Update player's position based on the mouse coordinates
+        player.posX = (int) (mouseX - player.size / 2);
+        player.posY = (int) (mouseY - player.size / 2);
+
+        // Keep the player within the screen bounds
+        if (player.posX < 0)
+            player.posX = 0;
+        if (player.posX > WIDTH - PLAYER_SIZE)
+            player.posX = WIDTH - PLAYER_SIZE;
+        if (player.posY < 0)
+            player.posY = 0;
+        if (player.posY > HEIGHT - PLAYER_SIZE)
+            player.posY = HEIGHT - PLAYER_SIZE;
+
         player.posX = (int) (mouseX - player.size / 2); // center the player
 
         // Update and draw bombs
@@ -245,22 +412,19 @@ public class LevelThree extends Application {
                 player.explode();
             }
         });
-        
-     
-        
-     // Update and draw boss
+
+        // Update and draw boss
         boss.stream().peek(Rocket::update).peek(Rocket::draw).forEach(e -> {
             if (player.collide(e) && !player.exploding) {
                 player.explode();
             }
         });
-     // Update and draw boss head
-        
-        //Boss movements
-        
-        
+        // Update and draw boss head
+
+        // Boss movements
+
         // Update and draw shots // Changes L
-        
+
         for (int i = enemyshots.size() - 1; i >= 0; i--) {
             EnemyShot enemyshot = enemyshots.get(i);
             if (enemyshot.posY > HEIGHT || enemyshot.toRemove) {
@@ -268,14 +432,14 @@ public class LevelThree extends Application {
                 continue;
             }
             enemyshot.update();
-            enemyshot.draw();          
-            	if (enemyshot.collide(player) && !player.exploding) {
-                    player.explode(); // Player explodes if hit by an enemy shot
-                    enemyshot.toRemove = true; // Remove the enemy shot after collision
-                }
-            
+            enemyshot.draw();
+            if (enemyshot.collide(player) && !player.exploding) {
+                player.explode(); // Player explodes if hit by an enemy shot
+                enemyshot.toRemove = true; // Remove the enemy shot after collision
+            }
+
         }
-        
+
         for (int i = shots.size() - 1; i >= 0; i--) {
             Shot shot = shots.get(i);
             if (shot.posY < 0 || shot.toRemove) {
@@ -296,16 +460,14 @@ public class LevelThree extends Application {
                     shot.toRemove = true;
                 }
             }
-            
-        }
-        
-     
 
-//        for (int i = Bombs.size() - 1; i >= 0; i--) {
-//            if (Bombs.get(i).destroyed) {
-//                Bombs.set(i, newBomb());
-//            }
-//        }
+        }
+
+        // for (int i = Bombs.size() - 1; i >= 0; i--) {
+        // if (Bombs.get(i).destroyed) {
+        // Bombs.set(i, newBomb());
+        // }
+        // }
 
         // Check if the game is over
         gameOver = player.destroyed;
@@ -315,7 +477,7 @@ public class LevelThree extends Application {
             gc.setFill(Color.YELLOW);
             gc.fillText("Game Over\nYour Score is: " + score + "\nClick to play again", WIDTH / 2, HEIGHT / 2.5);
         }
-        
+
         // Add new universes
         if (RAND.nextInt(10) > 2) {
             universes.add(new Universe());
@@ -324,11 +486,12 @@ public class LevelThree extends Application {
         // Remove universes that have gone past the screen
         universes.removeIf(universe -> universe.posY > HEIGHT);
     }
+
     private Bomb newBomb() {
         return new Bomb(50 + RAND.nextInt(WIDTH - 100), 0, PLAYER_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]);
     }
-    //boss 
-    
+    // boss
+
     private Boss newBoss() {
         return new Boss(50 + RAND.nextInt(WIDTH - 100), 0, PLAYER_SIZE, BOSS_IMG);
     }
@@ -358,7 +521,7 @@ public class LevelThree extends Application {
 
             // Show the dialog and wait for the user to choose a power-up
             dialog.showAndWait().ifPresent(buttonType -> {
-            	if (buttonType == biggerBulletButton) {
+                if (buttonType == biggerBulletButton) {
                     // Apply the chosen power-up effect for bigger bullet
                     Shot.size *= 1.5;
                     DMG++; // Changes L
@@ -367,12 +530,11 @@ public class LevelThree extends Application {
                     Shot.speed *= 2;
                     MAX_SHOTS += 5;
                 }
-             // Reset the flag after applying the power-up effect:
+                // Reset the flag after applying the power-up effect:
                 showPowerUpSelection = false;
             });
         });
     }
-
 
     public static void main(String[] args) {
         launch();
@@ -392,20 +554,23 @@ public class LevelThree extends Application {
         }
 
         public Shot shoot() {
-            // Adjust the starting position of the bullet by subtracting half of the bullet's size
+            // Adjust the starting position of the bullet by subtracting half of the
+            // bullet's size
             int bulletX = posX + size / 2 - Shot.size / 2;
             // Create a new Shot object
             return new Shot(bulletX, posY - Shot.size);
         }
 
         public void update() {
-            if (exploding) explosionStep++;
+            if (exploding)
+                explosionStep++;
             destroyed = explosionStep > EXPLOSION_STEPS;
         }
 
         public void draw() {
             if (exploding) {
-                gc.drawImage(EXPLOSION_IMG, explosionStep % EXPLOSION_COL * EXPLOSION_W, (explosionStep / EXPLOSION_ROWS) * EXPLOSION_H + 1,
+                gc.drawImage(EXPLOSION_IMG, explosionStep % EXPLOSION_COL * EXPLOSION_W,
+                        (explosionStep / EXPLOSION_ROWS) * EXPLOSION_H + 1,
                         EXPLOSION_W, EXPLOSION_H,
                         posX, posY, size, size);
             } else {
@@ -424,9 +589,9 @@ public class LevelThree extends Application {
             explosionStep = -1;
         }
     }
-    
+
     public class Bomb extends Rocket {
-    	int hitpoints;
+        int hitpoints;
         int SPEED = (score / 10) + 1;
         private static final int SHOOTING_COOLDOWN = 50; // Adjust as needed
         private int shootingCooldown = SHOOTING_COOLDOWN;
@@ -434,21 +599,23 @@ public class LevelThree extends Application {
         public Bomb(int posX, int posY, int size, Image image) {
             super(posX, posY, size, image);
             hitpoints = MAX_HITPOINTS;
-        }	
+        }
 
         public void update() {
             super.update();
-            if (!exploding && !destroyed) posY += SPEED;
-            if (posY > HEIGHT) destroyed = true;
+            if (!exploding && !destroyed)
+                posY += SPEED;
+            if (posY > HEIGHT)
+                destroyed = true;
             if (!exploding && !destroyed) {
                 posY += 2; // Move down
-                
+
                 if (moveRight) {
                     posX += SPEED;
                 } else {
                     posX -= SPEED;
                 }
-                
+
                 if (posX <= 0 || posX >= WIDTH - size) {
                     moveRight = !moveRight;
                     posY += size;
@@ -459,11 +626,11 @@ public class LevelThree extends Application {
                 // Shoot towards the player
                 shootTowardsPlayer();
                 if (shootingCooldown <= 0 && !destroyed) {
-                shootingCooldown = SHOOTING_COOLDOWN;
+                    shootingCooldown = SHOOTING_COOLDOWN;
                 }
             }
         }
-        
+
         private void shootTowardsPlayer() {
             // Calculate direction towards the player
             double deltaX = player.posX - posX;
@@ -476,18 +643,18 @@ public class LevelThree extends Application {
             // You can adjust the speed and other properties of the shot as needed
             enemyshots.add(new EnemyShot(bulletX, bulletY, angle, BULLET_IMG));
         }
-        
+
         public void hit() {
-        	hitpoints -= DMG;
-            if (hitpoints <= 0  ) {
+            hitpoints -= DMG;
+            if (hitpoints <= 0) {
                 explode();
                 score++;
             }
         }
     }
-    
+
     public class Boss extends Rocket {
-    	int hitpoints, maxHitpoints;
+        int hitpoints, maxHitpoints;
         int SPEED = 5;
         int directionX = 1;
         int directionY = 1;
@@ -497,26 +664,27 @@ public class LevelThree extends Application {
         public Boss(int posX, int posY, int size, Image image) {
             super(posX, posY, size, image);
             hitpoints = 1000;
-            maxHitpoints = hitpoints; 
+            maxHitpoints = hitpoints;
         }
-        
+
         public void drawHealthBar() {
-            double healthBarWidth = (double) hitpoints / maxHitpoints * size; // Calculate width based on current and maximum hitpoints
+            double healthBarWidth = (double) hitpoints / maxHitpoints * size; // Calculate width based on current and
+                                                                              // maximum hitpoints
             double healthBarHeight = 10; // Height of the health bar
-            double healthBarX = (WIDTH/2) - (500/2); // X-coordinate of the health bar
+            double healthBarX = (WIDTH / 2) - (500 / 2); // X-coordinate of the health bar
             double healthBarY = -40 + 90; // Y-coordinate of the health bar, positioned above the boss
-            
+
             Font font = Font.font("Palatino Linotype", 25);
             gc.setFont(font);
             gc.setFill(Color.web("#FFFF6E"));
             gc.setTextAlign(TextAlignment.CENTER);
-            gc.fillText("リ⊣ ∴╎リ⊣ \n The Gate Keeper", healthBarX + size/2, healthBarY -20);
+            gc.fillText("リ⊣ ∴╎リ⊣ \n The Gate Keeper", healthBarX + size / 2, healthBarY - 20);
             // Draw the background of the health bar (gray)
             gc.setFill(Color.GRAY);
-            gc.fillRect(healthBarX, healthBarY+30, size, healthBarHeight);
+            gc.fillRect(healthBarX, healthBarY + 30, size, healthBarHeight);
             // Draw the current health level (green)
             gc.setFill(Color.RED);
-            gc.fillRect(healthBarX, healthBarY+30, healthBarWidth, healthBarHeight);
+            gc.fillRect(healthBarX, healthBarY + 30, healthBarWidth, healthBarHeight);
         }
 
         // Override the draw method to include drawing of the health bar
@@ -528,33 +696,38 @@ public class LevelThree extends Application {
 
         public void update() {
             super.update();
-            if (!exploding && !destroyed) posY += 2 * directionY;;
-            if (!exploding && !destroyed) posX += SPEED * directionX;;
-            if (posX <= 0 || posX >= (WIDTH)-500) {
+            if (!exploding && !destroyed)
+                posY += 2 * directionY;
+            ;
+            if (!exploding && !destroyed)
+                posX += SPEED * directionX;
+            ;
+            if (posX <= -10 || posX >= (WIDTH) - 490) {
                 directionX *= -1; // Reverse direction
             }
             if (posY <= -120 || posY >= -45) {
                 directionY *= -1; // Reverse direction
             }
-            if (!exploding && hitpoints <= 50)hitpoints++;
+            if (!exploding && hitpoints <= 50)
+                hitpoints++;
             if (shootingCooldown <= 90 && !destroyed) {
                 // Shoot towards the player
-            	shootingCooldown--;
-            if (shootingCooldown <= 80 && !destroyed) {
-                // Shoot towards the player
-            	shootingCooldown--;
-                shotgun();
-                if (shootingCooldown <= 0 && !destroyed) {
-                shootingCooldown = SHOOTING_COOLDOWN;
+                shootingCooldown--;
+                if (shootingCooldown <= 80 && !destroyed) {
+                    // Shoot towards the player
+                    shootingCooldown--;
+                    shotgun();
+                    if (shootingCooldown <= 0 && !destroyed) {
+                        shootingCooldown = SHOOTING_COOLDOWN;
+                    }
                 }
             }
-            }
         }
-        
+
         private void shootTowardsPlayer() {
             // Calculate direction towards the player
-        	double deltaX = player.posX - (posX+ 250);
-            double deltaY = player.posY - (posY+ 250);
+            double deltaX = player.posX - (posX + 250);
+            double deltaY = player.posY - (posY + 250);
             double angle = Math.atan2(deltaY, deltaX);
 
             // Create a new shot towards the player's position
@@ -563,35 +736,35 @@ public class LevelThree extends Application {
             // You can adjust the speed and other properties of the shot as needed
             enemyshots.add(new EnemyShot(bulletX, bulletY, angle, BULLET_IMG));
         }
+
         private void shotgun() {
             // Calculate direction towards the player
-        	double deltaX = player.posX - (posX+ 250);
-            double deltaY = player.posY - (posY+ 250);
+            double deltaX = player.posX - (posX + 250);
+            double deltaY = player.posY - (posY + 250);
             double angle = Math.atan2(deltaY, deltaX);
 
             // Create a new shot towards the player's position
             int bulletX = posX + size / 2; // Adjust as needed
             int bulletY = posY + size / 2; // Adjust as needed
             // You can adjust the speed and other properties of the shot as needed
-            enemyshots.add(new EnemyShot(bulletX, bulletY, angle + 0.3, new Image("file:images/bullets.png")));
-            enemyshots.add(new EnemyShot(bulletX, bulletY, angle - 0.3, new Image("file:images/bullets.png")));
-            enemyshots.add(new EnemyShot(bulletX, bulletY, angle + 0.5, new Image("file:images/bullets.png")));
-            enemyshots.add(new EnemyShot(bulletX, bulletY, angle - 0.5, new Image("file:images/bullets.png")));
-            enemyshots.add(new EnemyShot(bulletX, bulletY, angle + 0.75, new Image("file:images/bullets.png")));
-            enemyshots.add(new EnemyShot(bulletX, bulletY, angle - 0.75, new Image("file:images/bullets.png")));
+            enemyshots.add(new EnemyShot(bulletX, bulletY, angle + 0.25, new Image("file:src/images/bullets.png")));
+            enemyshots.add(new EnemyShot(bulletX, bulletY, angle - 0.25, new Image("file:src/images/bullets.png")));
+            enemyshots.add(new EnemyShot(bulletX, bulletY, angle + 0.5, new Image("file:src/images/bullets.png")));
+            enemyshots.add(new EnemyShot(bulletX, bulletY, angle - 0.5, new Image("file:src/images/bullets.png")));
+            enemyshots.add(new EnemyShot(bulletX, bulletY, angle + 0.75, new Image("file:src/images/bullets.png")));
+            enemyshots.add(new EnemyShot(bulletX, bulletY, angle - 0.75, new Image("file:src/images/bullets.png")));
         }
-        
+
         public void hit() {
-        	hitpoints -= DMG;
-        	shootTowardsPlayer();
-        	shootingCooldown--;
+            hitpoints -= DMG;
+            shootTowardsPlayer();
+            shootingCooldown--;
             if (hitpoints <= 0) {
                 explode();
-                score+= 750;
+                score += 750;
             }
         }
     }
-    
 
     // Shot class
     public static class Shot {
@@ -606,7 +779,7 @@ public class LevelThree extends Application {
         public Shot(int posX, int posY) {
             this.posX = posX;
             this.posY = posY;
-            bulletImage = new Image("file:images/bullets.png");
+            bulletImage = new Image("file:src/images/bullets.png");
         }
 
         public void update() {
@@ -625,24 +798,24 @@ public class LevelThree extends Application {
             return distance < rocket.size / 2 + size / 2;
         }
     }
-    
+
     public class EnemyShot extends Shot {
-    	private Image image;
-    	int speed = 30 + score/20;
-    	private double angle; // Add angle field
-    	
+        private Image image;
+        int speed = 30 + score / 20;
+        private double angle; // Add angle field
+
         public EnemyShot(int posX, int posY, double angle, Image image) {
             super(posX, posY);
-            this.angle = angle; 
+            this.angle = angle;
             this.image = image;// Initialize angle
             // Customize the appearance or behavior of the enemy shot if needed
         }
-        
+
         @Override
         public void update() {
-        	posX += Math.cos(angle) * speed;
+            posX += Math.cos(angle) * speed;
             posY += Math.sin(angle) * speed;
-            
+
             // Check if the shot collides with the player
             if (collidePlayer()) {
                 // Perform actions when the shot collides with the player
@@ -650,20 +823,20 @@ public class LevelThree extends Application {
                 toRemove = true; // Mark the shot for removal
             }
         }
-        
+
         public void draw() {
             if (image != null) {
                 gc.drawImage(image, posX, posY, size * 0.2, size * 5);
             }
         }
-        
 
         // Method to check collision with the player
         private boolean collidePlayer() {
             // Calculate the distance between the shot and the player
             int distance = distance(this.posX + size / 2, this.posY + size / 2,
                     player.posX + player.size / 2, player.posY + player.size / 2);
-            // Check if the distance is less than the sum of the radii of the shot and the player
+            // Check if the distance is less than the sum of the radii of the shot and the
+            // player
             return distance < player.size / 2 + size / 2;
         }
     }
@@ -682,20 +855,24 @@ public class LevelThree extends Application {
             g = RAND.nextInt(100) + 150;
             b = RAND.nextInt(100) + 150;
             opacity = RAND.nextFloat();
-            if (opacity < 0) opacity *= -1;
-            if (opacity > 0.5) opacity = 0.5;
+            if (opacity < 0)
+                opacity *= -1;
+            if (opacity > 0.5)
+                opacity = 0.5;
         }
 
         public void draw() {
-            if (opacity > 0.8) opacity -= 0.01;
-            if (opacity < 0.1) opacity += 0.01;
+            if (opacity > 0.8)
+                opacity -= 0.01;
+            if (opacity < 0.1)
+                opacity += 0.01;
             gc.setFill(Color.rgb(r, g, b, opacity));
             gc.fillOval(posX, posY, w, h);
             posY += 20;
         }
     }
-    
-    private boolean moveRight = true; 
+
+    private boolean moveRight = true;
     private static final int TRIANGLE_ROWS = 2;
     private static final int ENEMY_SIZE = 80;
     private static final int ENEMY_GAP = 15;
@@ -704,31 +881,31 @@ public class LevelThree extends Application {
     private void createTriangleFormation() {
         if (score < 150 || score >= 160) {
             int currentY = -210;
-            
+
             int startX = RAND.nextInt(WIDTH - (TRIANGLE_ROWS * (ENEMY_SIZE + ENEMY_GAP)));
-            
+
             for (int row = 0; row < TRIANGLE_ROWS; row++) {
                 int enemiesInRow = TRIANGLE_ROWS - row;
-                
+
                 startX += (row == 0) ? 0 : (ENEMY_SIZE + ENEMY_GAP) / 2;
                 boolean moveRight = row % 2 == 0; // Alternate initial movement direction
                 for (int i = 0; i < enemiesInRow; i++) {
                     int posX = startX + i * (ENEMY_SIZE + ENEMY_GAP);
                     bombs.add(new Bomb(posX, currentY, ENEMY_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]));
                 }
-                
+
                 currentY += ENEMY_SIZE + ENEMY_GAP;
             }
         }
-    }    
-    
-    //boss formation
+    }
+
+    // boss formation
     private void createBossFormation() {
         int currentY = -50; // Starting Y position of the triangle formation
-        
-        //spawn 
-        int posX = WIDTH/2;
-       
-        boss.add(new Boss(posX - 500/2, currentY, 500, BOSS_IMG));
-    } 
+
+        // spawn
+        int posX = WIDTH / 2;
+
+        boss.add(new Boss(posX - 500 / 2, currentY, 500, BOSS_IMG));
+    }
 }
