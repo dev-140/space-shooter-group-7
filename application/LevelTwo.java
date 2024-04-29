@@ -59,7 +59,7 @@ public class LevelTwo extends Application {
     private static final int EXPLOSION_COL = 3;
     private static final int EXPLOSION_H = 128;
     private int SPLIT = 1;
-    private int Shield = 2;
+    private int Shield = 0;
     private static final int EXPLOSION_STEPS = 15;
 
     private static GraphicsContext gc;
