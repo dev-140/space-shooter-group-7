@@ -61,26 +61,29 @@ public class LevelOne extends Application {
     private int score;
     private int MAX_HITPOINTS = 1; // Changes L
     private int MAX_SHOTS = 15;
+    private int SPLIT = 1;
     private int DMG = 1; // Changes L
     private boolean gameOver = false;
     private boolean gameFinished = false;
     private boolean powerUpAvailable = false;
     private boolean powerUpChosen = false;
+    private int Shield = 0;
     private Timeline timeline;
     private boolean powerUpMenuTriggered = false;
+    
 
     private List<String> redCirclePowerUps = new ArrayList<>(); // List to store power-ups from red circles
 
-    static final Image PLAYER_IMG = new Image("file:src/images/player.png");
-    static final Image EXPLOSION_IMG = new Image("file:src/images/explosion.png");
+    static final Image PLAYER_IMG = new Image("file:images/player.png");
+    static final Image EXPLOSION_IMG = new Image("file:images/explosion.png");
     static final Image[] BOMBS_IMG = {
-            new Image("file:src/images/1.png"),
-            new Image("file:src/images/2.png")
+            new Image("file:images/1.png"),
+            new Image("file:images/2.png")
     };
 
     // Boss Sprites
-    static final Image BOSS_H_IMG = new Image("file:src/images/head.png");
-    static final Image BOSS_IMG = new Image("file:src/images/body.png");
+    static final Image BOSS_H_IMG = new Image("file:images/head.png");
+    static final Image BOSS_IMG = new Image("file:images/body.png");
 
     public void start(Stage stage) throws Exception {
         Canvas canvas = new Canvas(WIDTH, HEIGHT);
@@ -121,12 +124,19 @@ public class LevelOne extends Application {
         });
 
         scene.setOnMouseClicked(e -> {
-            if (shots.size() < MAX_SHOTS)
+        	if (shots.size() < MAX_SHOTS && SPLIT >= 3 && !gameOver) {
+        		shots.add(player.shoot());
+        		shots.add(new Shot(player.posX, player.posY - Shot.size));
+        		shots.add(new Shot(player.posX + player.size, player.posY - Shot.size));
+        	}else if (shots.size() < MAX_SHOTS && SPLIT >= 2 && !gameOver) {
+        		shots.add(new Shot(player.posX + 15, player.posY - Shot.size));
+        		shots.add(new Shot(player.posX + player.size - 15, player.posY - Shot.size));
+        	}else if (shots.size() < MAX_SHOTS)
                 shots.add(player.shoot());
             if (gameOver && score >= 150) {
                 gameOver = false;
                 setup();
-                score = 0;
+                score = 150;
             } else if (gameOver && score < 150) {
                 gameOver = false;
                 setup();
@@ -172,7 +182,7 @@ public class LevelOne extends Application {
         boss = new ArrayList<>();
         bossH = new ArrayList<>();
         player = new Rocket(WIDTH / 2, HEIGHT - PLAYER_SIZE, PLAYER_SIZE, PLAYER_IMG);
-        score = 140;
+        score = 0;
         // IntStream.range(0, MAX_BOMBS).mapToObj(i ->
         // this.newBomb()).forEach(Bombs::add);
         triangleSpawnTimeline = new Timeline(new KeyFrame(TRIANGLE_SPAWN_INTERVAL, e -> createTriangleFormation()));
@@ -409,14 +419,21 @@ public class LevelOne extends Application {
         // Check if power-up is available and handle power-up selection
         if (score > 0 && score % 35 == 0 && !showPowerUpSelection && score < 152) {
             // Show level 35 power-up options
+        	timeline.stop();
             showLevelPowerUpOptions();
             score++;
         }
 
         bombs.stream().peek(Rocket::update).peek(Rocket::draw).forEach(e -> {
-            if (player.collide(e) && !player.exploding) {
-                player.explode();
+            if (player.collide(e) && !player.exploding ) {
+            	if(player.collide(e) && !player.exploding && Shield >= 1) {
+            		Shield--;
+            	}
+            	if(player.collide(e) && !player.exploding && Shield <= 0) {
+                		player.explode();
+            	}
             }
+            
             e.drawRedCircle(gc); // Draw red circle if exists
             e.updateRedCircle(); // Update red circle position
 
@@ -426,10 +443,13 @@ public class LevelOne extends Application {
                     && e.getRedCircle().collide(player)) {
                 e.getRedCircle().deactivate(); // Deactivate red circle
                 // Show red circle power-up options
+                timeline.stop();
+                
                 showRedCirclePowerUpOptions();
                 powerUpMenuTriggered = true; // Set the flag to true
             }
         });
+        
 
         // all boss defeated and boss spawn
         boolean allBossesDefeated = boss.isEmpty() && bossH.isEmpty();
@@ -437,7 +457,6 @@ public class LevelOne extends Application {
         if (score >= 150 && score < 151 && allBossesDefeated) {
             createBossFormation();
             score++;
-
         }
         if (score >= 150) {
 
@@ -508,15 +527,13 @@ public class LevelOne extends Application {
 
         // Update and draw bombs
         bombs.stream().peek(Rocket::update).peek(Rocket::draw).forEach(e -> {
-            if (player.collide(e) && !player.exploding) {
-                player.explode();
-            }
             e.drawRedCircle(gc); // Draw red circle if exists
             e.updateRedCircle(); // Update red circle position
 
             // Check collision with red circle and handle power-up selection
             if (e.getRedCircle() != null && e.getRedCircle().isActive() && e.getRedCircle().collide(player)) {
                 e.getRedCircle().deactivate(); // Deactivate red circle
+                timeline.stop();
                 showPowerUpOptions(); // Trigger power-up selection
             }
         });
@@ -526,6 +543,7 @@ public class LevelOne extends Application {
             Bomb bomb = bombs.get(i);
             RedCircle redCircle = bomb.getRedCircle();
             if (redCircle != null && redCircle.collide(player)) {
+            	timeline.stop();
                 redCircle.deactivate(); // Deactivate red circle
                 showPowerUpOptions(); // Trigger power-up selection
             }
@@ -627,11 +645,11 @@ public class LevelOne extends Application {
         Platform.runLater(() -> {
             Dialog<ButtonType> dialog = new Dialog<>();
             dialog.setTitle("Choose Power-Up");
-            dialog.setHeaderText("Select a power-up:");
+            dialog.setHeaderText("Select a power-up:"); 
 
             // Create buttons for different power-up options
             ButtonType shieldButton = new ButtonType("Shield");
-            ButtonType fasterShipButton = new ButtonType("Faster Ship");
+            ButtonType fasterShipButton = new ButtonType("Wide shot");
 
             // Add buttons to the dialog
             dialog.getDialogPane().getButtonTypes().addAll(shieldButton, fasterShipButton);
@@ -645,11 +663,11 @@ public class LevelOne extends Application {
             // Show the dialog and wait for the user to choose a power-up
             dialog.showAndWait().ifPresent(buttonType -> {
                 if (buttonType == shieldButton) {
-                    // Apply shield power-up effect
-                    // Implement shield power-up effect here
+                	Shield += 15;
+                	timeline.play();
                 } else if (buttonType == fasterShipButton) {
-                    // Apply faster ship power-up effect
-                    // Implement faster ship power-up effect here
+                    SPLIT++;
+                	timeline.play();
                 }
                 // Reset the flag after applying the power-up effect:
                 showPowerUpSelection = false;
@@ -715,17 +733,20 @@ public class LevelOne extends Application {
 
             // Show the dialog and wait for the user to choose a power-up
             dialog.showAndWait().ifPresent(buttonType -> {
+            	
                 if (buttonType == biggerBulletButton) {
                     Shot.size *= 1.2;
                     DMG++; // Changes L
                     redCirclePowerUps.add("STRONGER");
                     System.out.println("STRONGER Bullet power-up added.");
+                    timeline.play();
                 } else if (buttonType == fasterBulletButton) {
                     // Apply the chosen power-up effect for faster bullet
                     Shot.speed *= 1.2;
                     MAX_SHOTS += 2;
                     redCirclePowerUps.add("FASTER");
                     System.out.println("Faster Bullet power-up added.");
+                    timeline.play();
                 }
                 // Reset the flag after applying the power-up effect:
                 showPowerUpSelection = false;
@@ -804,10 +825,11 @@ public class LevelOne extends Application {
         public Shot shoot() {
             // Adjust the starting position of the bullet by subtracting half of the
             // bullet's size
-            int bulletX = posX + size / 2 - Shot.size / 2;
+            int bulletX = posX + size / 2 ;
             // Create a new Shot object
             return new Shot(bulletX, posY - Shot.size);
         }
+        
 
         public void update() {
             if (exploding)
@@ -833,7 +855,7 @@ public class LevelOne extends Application {
         }
 
         public void explode() {
-            exploding = true;
+        	exploding = true;
             explosionStep = -1;
         }
     }
@@ -1017,7 +1039,7 @@ public class LevelOne extends Application {
         public Shot(int posX, int posY) {
             this.posX = posX;
             this.posY = posY;
-            bulletImage = new Image("file:src/images/bullets.png");
+            bulletImage = new Image("file:images/bullets.png");
         }
 
         public void update() {
