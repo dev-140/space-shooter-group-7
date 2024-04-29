@@ -58,6 +58,8 @@ public class LevelTwo extends Application {
     private static final int EXPLOSION_ROWS = 3;
     private static final int EXPLOSION_COL = 3;
     private static final int EXPLOSION_H = 128;
+    private int SPLIT = 1;
+    private int Shield = 2;
     private static final int EXPLOSION_STEPS = 15;
 
     private static GraphicsContext gc;
@@ -90,25 +92,25 @@ public class LevelTwo extends Application {
 
     private List<String> redCirclePowerUps = new ArrayList<>(); // List to store power-ups from red circles
 
-    static final Image BACKGROUND_GIF = new Image("file:src/images/bg.gif");
-    static final Image WARN_BACKGROUND_IMG = new Image("file:src/images/WARN.png");
-    static final Image FROZEN_BACKGROUND_IMG = new Image("file:src/images/frozen.png");
-    static final Image PLAYER_IMG = new Image("file:src/images/player.png");
-    static final Image EXPLOSION_IMG = new Image("file:src/images/explosion.png");
+    static final Image BACKGROUND_GIF = new Image("file:images/bg.gif");
+    static final Image WARN_BACKGROUND_IMG = new Image("file:images/WARN.png");
+    static final Image FROZEN_BACKGROUND_IMG = new Image("file:images/frozen.png");
+    static final Image PLAYER_IMG = new Image("file:images/player.png");
+    static final Image EXPLOSION_IMG = new Image("file:images/explosion.png");
     static final Image[] BOMBS_IMG = {
-            new Image("file:src/images/3.png"),
-            new Image("file:src/images/4.png"),
-            new Image("file:src/images/2.png")
+            new Image("file:images/3.png"),
+            new Image("file:images/4.png"),
+            new Image("file:images/2.png")
     };
 
     // Boss sprites
-    static final Image BOSS_IMG = new Image("file:src/images/Naia.gif");
-    static final Image PROPS_IMG = new Image("file:src/images/wheel.gif");
+    static final Image BOSS_IMG = new Image("file:images/Naia.gif");
+    static final Image PROPS_IMG = new Image("file:images/wheel.gif");
 
     // Enemy Bullet sprite
     static final Image[] BULLET_IMG = {
-            new Image("file:src/images/enemybullets.png"),
-            new Image("file:src/images/homingbullets.png"),
+            new Image("file:images/enemybullets.png"),
+            new Image("file:images/homingbullets.png"),
     };
 
     public void start(Stage stage) throws Exception {
@@ -142,15 +144,25 @@ public class LevelTwo extends Application {
 
         Scene scene = new Scene(stackPane, WIDTH, HEIGHT);
         scene.getStylesheets().add(getClass().getResource("main.css").toExternalForm());
+        
         scene.setCursor(Cursor.MOVE);
-
         scene.setOnMouseMoved(e -> {
+        	if(!frozen) {
             mouseX = e.getX();
             mouseY = e.getY();
+        	}
         });
+        
 
         scene.setOnMouseClicked(e -> {
-            if (shots.size() < MAX_SHOTS && !frozen)
+        	if (shots.size() < MAX_SHOTS && SPLIT >= 3 && !gameOver && !frozen) {
+        		shots.add(player.shoot());
+        		shots.add(new Shot(player.posX, player.posY - Shot.size));
+        		shots.add(new Shot(player.posX + player.size, player.posY - Shot.size));
+        	}else if (shots.size() < MAX_SHOTS && SPLIT >= 2 && !gameOver && !frozen) {
+        		shots.add(new Shot(player.posX + 15, player.posY - Shot.size ));
+        		shots.add(new Shot(player.posX + player.size - 15, player.posY - Shot.size));
+        	}else if (shots.size() < MAX_SHOTS && !frozen)
                 shots.add(player.shoot());
             if (gameOver && score >= 150) {
                 gameOver = false;
@@ -400,8 +412,8 @@ public class LevelTwo extends Application {
         towerSpawnCounter++;
         if (score < 150 && towerSpawnCounter >= 200) {
             towerSpawnCounter = 0;
-            tower.add(new Tower(70, -400, 300, new Image("file:src/images/clocktower.gif")));
-            tower.add(new Tower(900, -400, 300, new Image("file:src/images/clocktower.gif")));
+            tower.add(new Tower(70, -400, 300, new Image("file:images/clocktower.gif")));
+            tower.add(new Tower(900, -400, 300, new Image("file:images/clocktower.gif")));
         }
 
         for (Tower tower : tower) {
@@ -542,8 +554,13 @@ public class LevelTwo extends Application {
 
         // Update and draw bombs
         bombs.stream().peek(Rocket::update).peek(Rocket::draw).forEach(e -> {
-            if (player.collide(e) && !player.exploding) {
-                player.explode();
+        	if (player.collide(e) && !player.exploding ) {
+            	if(player.collide(e) && !player.exploding && Shield >= 1) {
+            		Shield--;
+            	}
+            	if(player.collide(e) && !player.exploding && Shield <= 0) {
+                		player.explode();
+            	}
             }
             e.drawRedCircle(gc); // Draw red circle if exists
             e.updateRedCircle(); // Update red circle position
@@ -551,6 +568,7 @@ public class LevelTwo extends Application {
             // Check collision with red circle and handle power-up selection
             if (e.getRedCircle() != null && e.getRedCircle().isActive() && e.getRedCircle().collide(player)) {
                 e.getRedCircle().deactivate(); // Deactivate red circle
+                timeline.stop();
                 showPowerUpOptions(); // Trigger power-up selection
             }
         });
@@ -560,6 +578,7 @@ public class LevelTwo extends Application {
             Bomb bomb = bombs.get(i);
             RedCircle redCircle = bomb.getRedCircle();
             if (redCircle != null && redCircle.collide(player)) {
+            	 timeline.stop();
                 redCircle.deactivate(); // Deactivate red circle
                 showPowerUpOptions(); // Trigger power-up selection
             }
@@ -683,9 +702,16 @@ public class LevelTwo extends Application {
             }
             enemyshot.update();
             enemyshot.draw();
-            if (enemyshot.collide(player) && !player.exploding) {
-                player.explode(); // Player explodes if hit by an enemy shot
+            if (enemyshot.collide(player) && !player.exploding && Shield >= 1) {
+            if (enemyshot.collide(player) && !player.exploding && Shield >= 1) {
+        		Shield--;
+        		enemyshot.toRemove = true;
+        	}
+            if (enemyshot.collide(player) && !player.exploding && Shield <= 0) {
                 enemyshot.toRemove = true; // Remove the enemy shot after collision
+
+                player.explode(); // Player explodes if hit by an enemy shot
+            }
             }
 
         }
@@ -729,7 +755,7 @@ public class LevelTwo extends Application {
 
             // Create buttons for different power-up options
             ButtonType shieldButton = new ButtonType("Shield");
-            ButtonType fasterShipButton = new ButtonType("Faster Ship");
+            ButtonType fasterShipButton = new ButtonType("Wide Shot");
 
             // Add buttons to the dialog
             dialog.getDialogPane().getButtonTypes().addAll(shieldButton, fasterShipButton);
@@ -743,11 +769,11 @@ public class LevelTwo extends Application {
             // Show the dialog and wait for the user to choose a power-up
             dialog.showAndWait().ifPresent(buttonType -> {
                 if (buttonType == shieldButton) {
-                    // Apply shield power-up effect
-                    // Implement shield power-up effect here
+                	Shield += 2;
+                	timeline.play();
                 } else if (buttonType == fasterShipButton) {
-                    // Apply faster ship power-up effect
-                    // Implement faster ship power-up effect here
+                	SPLIT++;
+                	timeline.play();
                 }
                 // Reset the flag after applying the power-up effect:
                 showPowerUpSelection = false;
@@ -819,12 +845,14 @@ public class LevelTwo extends Application {
                     DMG++; // Changes L
                     redCirclePowerUps.add("STRONGER");
                     System.out.println("STRONGER Bullet power-up added.");
+                    timeline.play();
                 } else if (buttonType == fasterBulletButton) {
                     // Apply the chosen power-up effect for faster bullet
                     Shot.speed *= 1.2;
                     MAX_SHOTS += 2;
                     redCirclePowerUps.add("FASTER");
                     System.out.println("Faster Bullet power-up added.");
+                    timeline.play();
                 }
                 // Reset the flag after applying the power-up effect:
                 showPowerUpSelection = false;
@@ -852,7 +880,7 @@ public class LevelTwo extends Application {
         public Shot shoot() {
             // Adjust the starting position of the bullet by subtracting half of the
             // bullet's size
-            int bulletX = posX + size / 2 - Shot.size / 2;
+            int bulletX = posX + size / 2;
             // Create a new Shot object
             return new Shot(bulletX, posY - Shot.size);
         }
@@ -1196,7 +1224,7 @@ public class LevelTwo extends Application {
         public Shot(int posX, int posY) {
             this.posX = posX;
             this.posY = posY;
-            bulletImage = new Image("file:src/images/bullets.png");
+            bulletImage = new Image("file:images/bullets.png");
             currentspeed = speed;
         }
 
@@ -1249,7 +1277,9 @@ public class LevelTwo extends Application {
             // Check if the shot collides with the player
             if (collidePlayer()) {
                 // Perform actions when the shot collides with the player
-                player.explode(); // For example, explode the player
+                if(Shield <= 0) {
+            	player.explode(); // For example, explode the player
+                }
                 toRemove = true; // Mark the shot for removal
             }
         }
