@@ -46,6 +46,7 @@ public class LevelOne extends Application {
     private static final int EXPLOSION_COL = 3;
     private static final int EXPLOSION_H = 128;
     private static final int EXPLOSION_STEPS = 15;
+    private int currentpu = 0;
 
     private static GraphicsContext gc;
     private Rocket player;
@@ -739,6 +740,7 @@ public class LevelOne extends Application {
                     DMG++; // Changes L
                     redCirclePowerUps.add("STRONGER");
                     System.out.println("STRONGER Bullet power-up added.");
+                    currentpu++;
                     timeline.play();
                 } else if (buttonType == fasterBulletButton) {
                     // Apply the chosen power-up effect for faster bullet
@@ -746,6 +748,7 @@ public class LevelOne extends Application {
                     MAX_SHOTS += 2;
                     redCirclePowerUps.add("FASTER");
                     System.out.println("Faster Bullet power-up added.");
+                    currentpu++;
                     timeline.play();
                 }
                 // Reset the flag after applying the power-up effect:
@@ -917,7 +920,7 @@ public class LevelOne extends Application {
         int SPEED = (score / 10) + 1;
 
         private RedCircle redCircle;
-        private static final double POWER_UP_DROP_PROBABILITY = 0.7; // 20% probability
+        private static final double POWER_UP_DROP_PROBABILITY = 0.3; // 20% probability
 
         public Bomb(int posX, int posY, int size, Image image) {
             super(posX, posY, size, image);
@@ -940,7 +943,7 @@ public class LevelOne extends Application {
                 score++;
 
                 // Drop power-up based on probability
-                if (Math.random() <= POWER_UP_DROP_PROBABILITY) {
+                if (Math.random() <= POWER_UP_DROP_PROBABILITY && currentpu <= 8 ) {
                     // Drop power-up (e.g., create red circle)
                     if (redCircle == null) {
                         redCircle = new RedCircle(this.posX, this.posY);
