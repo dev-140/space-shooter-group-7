@@ -60,6 +60,7 @@ public class LevelTwo extends Application {
     private static final int EXPLOSION_H = 128;
     private int SPLIT = 1;
     private int Shield = 0;
+    private int currentpu = 0;
     private static final int EXPLOSION_STEPS = 15;
 
     private static GraphicsContext gc;
@@ -395,7 +396,7 @@ public class LevelTwo extends Application {
         System.out.println("Current score: " + score);
 
         // Check if power-up is available and handle power-up selection
-        if (score > 0 && score % 5 == 0 && !showPowerUpSelection && score < 152) {
+        if (score > 0 && score % 35 == 0 && !showPowerUpSelection && score < 152) {
             showPowerUpSelection = true; // Set flag when score reaches a multiple of 20
             // Pause the game
             timeline.stop();
@@ -845,6 +846,7 @@ public class LevelTwo extends Application {
                     DMG++; // Changes L
                     redCirclePowerUps.add("STRONGER");
                     System.out.println("STRONGER Bullet power-up added.");
+                    currentpu++;
                     timeline.play();
                 } else if (buttonType == fasterBulletButton) {
                     // Apply the chosen power-up effect for faster bullet
@@ -852,6 +854,7 @@ public class LevelTwo extends Application {
                     MAX_SHOTS += 2;
                     redCirclePowerUps.add("FASTER");
                     System.out.println("Faster Bullet power-up added.");
+                    currentpu++;
                     timeline.play();
                 }
                 // Reset the flag after applying the power-up effect:
@@ -926,7 +929,7 @@ public class LevelTwo extends Application {
         int directionX = 1;
 
         private RedCircle redCircle;
-        private static final double POWER_UP_DROP_PROBABILITY = 0.9; // Adjust probability as needed
+        private static final double POWER_UP_DROP_PROBABILITY = 0.3; // Adjust probability as needed
 
         public Bomb(int posX, int posY, int size, Image image) {
             super(posX, posY, size, image);
@@ -952,7 +955,7 @@ public class LevelTwo extends Application {
                 score++;
 
                 // Drop power-up based on probability
-                if (Math.random() <= POWER_UP_DROP_PROBABILITY) {
+                if (Math.random() <= POWER_UP_DROP_PROBABILITY && currentpu <= 8) {
                     // Drop power-up (e.g., create red circle)
                     if (redCircle == null) {
                         redCircle = new RedCircle(this.posX, this.posY);
