@@ -1,4 +1,4 @@
-![space]((https://ibb.co/JRfgDGH))
+https://ibb.co/JRfgDGH
 
 # Space-Shooter
 
