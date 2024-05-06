@@ -1,4 +1,4 @@
-![space](https://i.ibb.co/wzFhv5h/shellsort-img.png)
+![space]([https://i.ibb.co/wzFhv5h/shellsort-img.png](https://ibb.co/JRfgDGH))
 
 # Space-Shooter
 
