@@ -2,7 +2,7 @@
 
 # Space-Shooter
 
-By group 7
+By Shell Sort
 
 ## Authors
 
